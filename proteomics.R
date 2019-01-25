@@ -3,7 +3,7 @@
 library(tidyverse)
 
 setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse") 
-data_raw <- read.csv("WT vs KO_pep.csv")
+data_raw <- read.csv("WT vs KO all pep.csv")
 
 # Normalization ----------------------------------------------------------------
 
@@ -178,12 +178,6 @@ ratio_sd <- temp_df$ratio_sd_df_sum / temp_df$ratio_df_sum
 protein_table <- cbind(protein_table, ratio_sd)
 colnames(protein_table) <- c(pro_med, sd_calc, pro_data, "ratio_sd")
 
-# Minimum number of peptides for each protein group 
-
-min_pep <- 5 
-protein_df$peptides <- table(data$Master.Protein.Accessions)
-protein_min <- filter(protein_df, protein_df$peptides >= min_pep)
-
 # Statistics -------------------------------------------------------------------
 log_norm <- log(data[, c(group1, ctrl)])
 colnames(log_norm) <- paste(colnames(log_norm), sep = "_", "log")
@@ -222,6 +216,11 @@ protein_df <- full_join(protein_df, pro_pvals, by = "Master.Protein.Accessions")
 protein_df$Master.Protein.Accessions <- 
   as.factor(protein_df$Master.Protein.Accessions)
 
+# Minimum number of peptides for each protein group 
+
+min_pep <- 5 
+protein_df$peptides <- table(data$Master.Protein.Accessions)
+protein_min <- filter(protein_df, protein_df$peptides >= min_pep)
 
 # Converting Protein Accession to Gene Symbol ----------------------------------
 
