@@ -111,10 +111,18 @@ protein <- protein_group(data_top, group_names) %>%
   as.character
 
 # Standard deviation of grouped relative abundance using top ionizers
-data_top$group1_sd_df <- (data_top$group1_sd)^2 * (data_top$group1_df - 1)
-data_top$ctrl_sd_df <- (data_top$ctrl_sd)^2 * (data_top$ctrl_df - 1)
+square_x_df <- function (dat, group_sd, group_df){
+  (dat[, group_sd])^2 * (dat[, group_df]) 
+}
 
+data_top$group1_sd^2 * data_top$group1_df
+
+data_top$group1_sd_df <- square_x_df(data_top, "group1_sd", "group1_df")
+data_top$ctrl_sd_df <- square_x_df(data_top, "ctrl_sd", "ctrl_df")
+
+# Creating a temp data frame to calculate the ratio sd
 temp_df <- NULL
+
 sd_sum <- c("group1_sd_df", "ctrl_sd_df")
 for (col in sd_sum){
   temp <- tapply(data_top[, col],
