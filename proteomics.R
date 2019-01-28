@@ -7,11 +7,11 @@ data_raw <- read.csv("WT vs KO_pep.csv")
 
 # Normalization ----------------------------------------------------------------
 
-# Median of each peptide for each group of data
-median_group <- function (dat, col){
+# Function applied to each peptide for a group of data with median as default
+as_group <- function (dat, col, FUN = median){
   list <- NULL
   for (i in 1:nrow(dat)){
-    temp <- median(as.numeric(dat[i, col], na.rm = TRUE))
+    temp <- FUN(as.numeric(dat[i, col], na.rm = TRUE))
     list <- c(list, temp)
   }
   return(list)
@@ -53,16 +53,9 @@ data$group1_med <- median_group(data, group1)
 data$ctrl_med <- median_group(data, ctrl)
 
 # Standard deviation between samples for each peptide
-group1_sd <- NULL 
-ctrl_sd <- NULL
-for (i in 1:nrow(data)){
-  group1_sd_temp <- sd(as.numeric(data[i, group1], na.rm = TRUE)) 
-  ctrl_sd_temp <- sd(as.numeric(data[i, ctrl], na.rm = TRUE))
-  group1_sd <- c(group1_sd, group1_sd_temp)
-  ctrl_sd <- c(ctrl_sd, ctrl_sd_temp)
-}
-data$group1_sd <- group1_sd
-data$ctrl_sd <- ctrl_sd
+
+data$group1_sd <- as_group(data, group1, FUN = sd)
+data$ctrl_sd <- as_group(data, ctrl, FUN = sd)
 
 # Relative abundance ratio for each peptide
 ratio <- group1_med / ctrl_med
