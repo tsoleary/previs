@@ -7,14 +7,18 @@ data_raw <- read.csv("WT vs KO_pep.csv")
 
 # Normalization ----------------------------------------------------------------
 
-ctrl_raw <- grep("Control", colnames(data_raw))
-
-ctrl_raw_med <- NULL
-for (i in 1:nrow(data_raw)){
-  ctrl_raw_med_temp <- median(as.numeric(data_raw[i, ctrl_raw], na.rm = TRUE))
-  ctrl_raw_med <- c(ctrl_raw_med, ctrl_raw_med_temp)
+# Median of each peptide for each group of data
+median_group <- function (dat, col){
+  list <- NULL
+  for (i in 1:nrow(dat)){
+    temp <- median(as.numeric(dat[i, col], na.rm = TRUE))
+    list <- c(list, temp)
+  }
+  return(list)
 }
-data_raw$ctrl_raw_med <- ctrl_raw_med
+
+ctrl_raw <- grep("Control", colnames(data_raw))
+data_raw$ctrl_raw_med <- median_group(data_raw, ctrl_raw)
 
 # set the max number of peptides used in analysis
 max_pep <- 15
@@ -45,17 +49,8 @@ data <- cbind(data, norm_test)
 group1 <- grep("Sample_norm", colnames(data))
 ctrl <- grep("Control_norm", colnames(data))
 
-# Median of normalized peptide data
-group1_med <- NULL 
-ctrl_med <- NULL
-for (i in 1:nrow(data)){
-  group1_med_temp <- median(as.numeric(data[i, group1], na.rm = TRUE)) 
-  ctrl_med_temp <- median(as.numeric(data[i, ctrl], na.rm = TRUE))
-  group1_med <- c(group1_med, group1_med_temp)
-  ctrl_med <- c(ctrl_med, ctrl_med_temp)
-}
-data$group1_med <- group1_med
-data$ctrl_med <- ctrl_med
+data$group1_med <- median_group(data, group1)
+data$ctrl_med <- median_group(data, ctrl)
 
 # Standard deviation between samples for each peptide
 group1_sd <- NULL 
@@ -241,11 +236,13 @@ protein_df$gene <- protein_df$Master.Protein.Accessions
 for (i in 1:nrow(protein_df)){
   num <- which(protein_df$gene[i] == gene_df$Accession, TRUE)
   if (length(num) == 1){
-    protein_df$gene <- gsub(protein_df$gene[i], gene_df$Gene[num], protein_df$gene)
+    protein_df$gene <- gsub(protein_df$gene[i], 
+                            gene_df$Gene[num], 
+                            protein_df$gene)
   }
 }
 
 # Remove outliers --------------------------------------------------------------
 
-#figure out way to edit in git hub
+
  
