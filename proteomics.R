@@ -258,7 +258,7 @@ protein_df$gene <- mpa_to_gene(protein_df, gene_df)
 # Removing rows with NA values for the median 
 data <- data[!(...), ]
 
-
+#home
 
 
  
