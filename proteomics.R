@@ -90,9 +90,27 @@ data_top <-
   as.data.frame
 
 # Protein Averages -------------------------------------------------------------
-protein_table <- NULL
 
 # Relative abundance of each protein using top ionizers
+protein_group <- function (dat, groups, FUN = mean){
+  tab <- NULL
+  for (col in groups){
+    temp <- tapply(dat[, col],
+                   dat$Master.Protein.Accessions,
+                   FUN,
+                   na.rm = TRUE)
+  }
+  tab <- cbind(tab, temp)
+}
+
+group_names <- c("group1_med", "ctrl_med")
+
+test <- protein_group(data_top, group_names)
+colnames(test) <- group_names
+
+protein_df <- rownames_to_column(protein_df, "Master.Protein.Accessions")
+
+# Old code #######
 pro_med <- c("ctrl_med", "group1_med")
 for (col in pro_med){
   temp <- tapply(data_top[, col],
@@ -130,6 +148,8 @@ group1_pooled_sd <- temp_df$group1_sd_df / temp_df$group1_df
 ctrl_pooled_sd <- temp_df$ctrl_sd_df / temp_df$ctrl_df
 protein_table <- cbind(protein_table, group1_pooled_sd, ctrl_pooled_sd)
 sd_calc <- c("group1_pooled_sd", "ctrl_pooled_sd")
+
+# Old code #################
 
 # Grouped relative protein abundance ratio using all peptides
 pro_data <- c("ratio")
@@ -211,7 +231,6 @@ pro_pvals <- as.data.frame(cbind(protein, p_vals))
 colnames(pro_pvals) <- c("Master.Protein.Accessions", "p-value")
 
 protein_df <- as.data.frame(protein_table)
-protein_df <- rownames_to_column(protein_df, "Master.Protein.Accessions")
 
 protein_df <- full_join(protein_df, pro_pvals, by = "Master.Protein.Accessions")
 # Warning - joining character vector and factor
