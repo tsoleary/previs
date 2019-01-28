@@ -61,17 +61,28 @@ data$ctrl_sd <- as_group(data, ctrl, FUN = sd)
 ratio <- group1_med / ctrl_med
 data$ratio <- ratio
 
-# Number of samples with each peptide per group
-group1_df <- NULL 
-ctrl_df <- NULL
-for (i in 1:nrow(data)){
-  group1_df_temp <- length(which(!is.na(data[i, group1])))
-  ctrl_df_temp <- length(which(!is.na(data[i, ctrl])))
-  group1_df <- c(group1_df, group1_df_temp - 1)
-  ctrl_df <- c(ctrl_df, ctrl_df_temp - 1)
+# Function to count degrees of freedom in a group, defaults witout duplicates
+
+count_df <- function (dat, col, dup = 1){
+  list <- NULL
+  for (i in 1:nrow(dat)){
+    temp <- length(which(!is.na(dat[i, col])))
+    temp <- temp / dup 
+    if(temp >= 1){
+      temp <- temp - 1
+    }
+    list <- c(list, temp)
+  }
+  return(list)
 }
-data$group1_df <- group1_df
-data$ctrl_df <- ctrl_df
+
+# Degrees of freedom
+data$group1_df <- count_df(data, group1, dup = 3)
+data$ctrl_df <- count_df(data, ctrl, dup = 3)
+
+# Removing rows with NA values for the median 
+
+
 
 # Protein Averages -------------------------------------------------------------
 protein_table <- NULL
