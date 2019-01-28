@@ -99,26 +99,16 @@ protein_group <- function (dat, groups, FUN = mean){
                    dat$Master.Protein.Accessions,
                    FUN,
                    na.rm = TRUE)
+    tab <- cbind(tab, temp)
   }
-  tab <- cbind(tab, temp)
+  colnames(tab) <- groups 
+  return(tab)
 }
 
-group_names <- c("group1_med", "ctrl_med")
-
-test <- protein_group(data_top, group_names)
-colnames(test) <- group_names
-
-protein_df <- rownames_to_column(protein_df, "Master.Protein.Accessions")
-
-# Old code #######
-pro_med <- c("ctrl_med", "group1_med")
-for (col in pro_med){
-  temp <- tapply(data_top[, col],
-                 data_top$Master.Protein.Accessions, 
-                 mean, 
-                 na.rm = TRUE)
-  protein_table <- cbind(protein_table, temp)
-}
+protein <- protein_group(data_top, group_names) %>% 
+  as.data.frame %>%
+  rownames_to_column("Master.Protein.Accessions") %>%
+  as.character
 
 # Standard deviation of grouped relative abundance using top ionizers
 data_top$group1_sd_df <- (data_top$group1_sd)^2 * (data_top$group1_df - 1)
