@@ -53,16 +53,14 @@ data$group1_med <- median_group(data, group1)
 data$ctrl_med <- median_group(data, ctrl)
 
 # Standard deviation between samples for each peptide
-
 data$group1_sd <- as_group(data, group1, FUN = sd)
 data$ctrl_sd <- as_group(data, ctrl, FUN = sd)
 
 # Relative abundance ratio for each peptide
-ratio <- group1_med / ctrl_med
+ratio <- data$group1_med / data$ctrl_med
 data$ratio <- ratio
 
 # Function to count degrees of freedom in a group, defaults witout duplicates
-
 count_df <- function (dat, col, dup = 1){
   list <- NULL
   for (i in 1:nrow(dat)){
@@ -81,8 +79,7 @@ data$group1_df <- count_df(data, group1, dup = 3)
 data$ctrl_df <- count_df(data, ctrl, dup = 3)
 
 # Removing rows with NA values for the median 
-
-
+temp <- data[!(is.na(data$ratio))]
 
 # Protein Averages -------------------------------------------------------------
 protein_table <- NULL
