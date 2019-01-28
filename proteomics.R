@@ -79,18 +79,18 @@ data$group1_df <- count_df(data, group1, dup = 3)
 data$ctrl_df <- count_df(data, ctrl, dup = 3)
 
 # Removing rows with NA values for the median 
-temp <- data[!(is.na(data$ratio))]
+data <- data[!(is.na(data$ratio)), ]
 
-# Protein Averages -------------------------------------------------------------
-protein_table <- NULL
-
-# Data frame with only top 3 or 5 peptides
+# Data frame with only top few ionizing peptides
 pep_top <- 3
 data_top <- 
   tbl_df(data) %>% 
   group_by(Master.Protein.Accessions) %>% 
   top_n(n = pep_top, wt = ctrl_med) %>%
   as.data.frame
+
+# Protein Averages -------------------------------------------------------------
+protein_table <- NULL
 
 # Relative abundance of each protein using top ionizers
 pro_med <- c("ctrl_med", "group1_med")
@@ -220,30 +220,28 @@ protein_df$Master.Protein.Accessions <-
 
 
 # Converting Protein Accession to Gene Symbol ----------------------------------
-
 gene_df <- read.csv('mouse_PD_accession_gene.csv')
 
-# data
-data$gene <- data$Master.Protein.Accessions
-for (i in 1:nrow(data)){
-  num <- which(data$gene[i] == gene_df$Accession, TRUE)
-  if (length(num) == 1){
-  data$gene <- gsub(data$gene[i], gene_df$Gene[num], data$gene)
+mpa_to_gene <- function (dat, gene_dat){
+  dat$gene <- dat$Master.Protein.Accessions
+  for (i in 1:nrow(dat)){
+    temp <- which(dat$gene[i] == gene_dat$Accession, TRUE)
+    if (length(temp) == 1){
+      dat$gene <- gsub(dat$gene[i], gene_dat$Gen[temp], dat$gene)
+    }
   }
+  return(dat$gene)
 }
 
-# protein_df
-protein_df$gene <- protein_df$Master.Protein.Accessions
-for (i in 1:nrow(protein_df)){
-  num <- which(protein_df$gene[i] == gene_df$Accession, TRUE)
-  if (length(num) == 1){
-    protein_df$gene <- gsub(protein_df$gene[i], 
-                            gene_df$Gene[num], 
-                            protein_df$gene)
-  }
-}
+data$gene <- mpa_to_gene(data, gene_df)
+protein_df$gene <- mpa_to_gene(protein_df, gene_df)
 
 # Remove outliers --------------------------------------------------------------
+
+# Removing rows with NA values for the median 
+data <- data[!(...), ]
+
+
 
 
  
