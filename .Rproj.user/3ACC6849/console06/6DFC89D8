@@ -1,0 +1,219 @@
+[0mMicrosoft Windows [Version 6.1.7601][0K[?25l
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.[0K
+[0K
+C:\Users\PrevBeast\Documents\GitHub\previs>[0K[?25hg[0Ki[0Kt[0K[48G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git -[0K[?25h-[0Kh[0Ke[0Kl[0Kp[0K]0;  - git  --help[?25l
+[0K[?25h]0; usage: git [--version] [--help] [-C <path>] [-c <name>=<value>][0K[?25l
+           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path][0K
+           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--bare][0K
+           [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>][0K
+           <command> [<args>][0K
+[0K
+These are common Git commands used in various situations:[0K
+[0K
+start a working area (see also: git help tutorial)[0K
+   clone      Clone a repository into a new directory[0K
+   init       Create an empty Git repository or reinitialize an existing one[0K
+[0K
+work on the current change (see also: git help everyday)[0K
+   add        Add file contents to the index[0K
+   mv         Move or rename a file, a directory, or a symlink[0K
+   reset      Reset current HEAD to the specified state[0K
+   rm         Remove files from the working tree and from the index[0K
+[0K
+examine the history and state (see also: git help revisions)[0K
+   bisect     Use binary search to find the commit that introduced a bug[0K
+   grep       Print lines matching a pattern[0K
+   log        Show commit logs[0K
+   show       Show various types of objects[0K
+   status     Show the working tree status[0K
+[0K
+grow, mark and tweak your common history[0K
+   branch     List, create, or delete branches[0K
+   checkout   Switch branches or restore working tree files[0K
+   commit     Record changes to the repository[0K
+   diff       Show changes between commits, commit and working tree, etc[0K
+   merge      Join two or more development histories together[0K
+   rebase     Reapply commits on top of another base tip[0K
+   tag        Create, list, delete or verify a tag object signed with GPG[0K
+[0K
+collaborate (see also: git help workflows)[0K
+   fetch      Download objects and refs from another repository[0K
+   pull       Fetch from and integrate with another repository or a local branch[0K
+   push       Update remote refs along with associated objects[0K
+[0K
+'git help -a' and 'git help -g' list available subcommands and some[0K
+concept guides. See 'git help <command>' or 'git help <concept>'[0K
+to read about a specific subcommand or concept.[0K
+[0K
+C:\Users\PrevBeast\Documents\GitHub\previs>[0K[?25h[?25l[14A   diff       Show changes between commits, commit and working t[0Kr
+   merge      Join two or more development histories together[0K
+   rebase     Reapply commits on top of another base tip[0K
+   tag        Create, list, delete or verify a tag object signed[0K
+[0K
+collaborate (see also: git help workflows)[0K
+   fetch      Download objects and refs from another repository[0K
+   pull       Fetch from and integrate with another repository o[0Kr
+   push       Update remote refs along with associated objects[0K
+[0K
+'git help -a' and 'git help -g' list available subcommands and s[0Ko
+concept guides. See 'git help <command>' or 'git help <concept>'[0K
+to read about a specific subcommand or concept.[0K
+[0K
+C:\Users\PrevBeast\Documents\GitHub\previs>[0K[?25hg[0Ki[0Kt[0K[48G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git c[0K[?25ho[0Kn[0Kf[0Ki[0Kg[0K[55G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -[0K[?25h-[0Kg[0Kl[0Ko[0Kb[0Ka[0Kl[0K[64G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --global c[0K[?25h[0Kr[?25l
+[0K[?25he[0Kd[0Ke[0Kn[0Kt[0Ki[0Ka[0Kl[0K.[0Kh[0Ke[0Kl[0Kp[0Ke[0Kr[0K[17G[?25ledential.helper c[0K[?25ha[0Kc[0Kh[0Ke[0K]0;  - git  config --global credential.helper cache[?25l
+[0K[?25h]0; [?25l
+C:\Users\PrevBeast\Documents\GitHub\previs>[0K[?25hg[0Ki[0Kt[0K[48G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git c[0K[?25ho[0Kn[0Kf[0Ki[0Kg[0K[55G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -[0K[?25hg[0Kl[0Ko[0Kb[0Ka[0Kl[0Kl[0K[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -global[0K[?25h[63G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -global c[0K[?25hr[0K[0Ke[?25l
+[0K[?25hd[0Ke[0Kn[0Kt[0Ki[0Ka[0Kl[0K.[0Kh[0Ke[0Kl[0Kp[0Ke[0Kr[0K[16G[?25ldential.helper '[0K[?25hs[0Kt[0Ko[0Kr[0Ke[0K[23G[?25ldential.helper 'store -[0K[?25h-[0Kf[0Ki[0Kl[0Ke[0K[30G[?25ldential.helper 'store --file ~[0K[?25h/[0Km[0Ky[0Kc[0Kr[0Ke[0Kd[0Ke[0Kn[0Kt[0Ki[0Ka[0Kl[0Ks[0K'[0K[?25ldential.helper 'store --file ~/mycredentials[0K[?25h[?25ldential.helper 'store --file ~/mycredential[0K[?25h[?25ldential.helper 'store --file ~/mycredentia[0K[?25h[?25ldential.helper 'store --file ~/mycredenti[0K[?25h[?25ldential.helper 'store --file ~/mycredent[0K[?25h[?25ldential.helper 'store --file ~/mycreden[0K[?25h[?25ldential.helper 'store --file ~/mycrede[0K[?25h[?25ldential.helper 'store --file ~/mycred[0K[?25h[?25ldential.helper 'store --file ~/mycre[0K[?25h[?25ldential.helper 'store --file ~/mycr[0K[?25h[?25ldential.helper 'store --file ~/myc[0K[?25h[?25ldential.helper 'store --file ~/my[0K[?25h-[0Kc[0Kr[0Ke[0Kd[0Ke[0Kn[0Kt[0Ki[0Ka[0Kl[0Ks[0K'[0K-[0K[?25ldential.helper 'store --file ~/my-credentials'[0K[?25h[?25ldential.helper 'store --file ~/my-credentials[0K[?25h[?25ldential.helper 'store --file ~/my-credential[0K[?25h[?25ldential.helper 'store --file ~/my-credentia[0K[?25h[?25ldential.helper 'store --file ~/my-credenti[0K[?25h[?25ldential.helper 'store --file ~/my-credent[0K[?25h[?25ldential.helper 'store --file ~/my-creden[0K[?25h[?25ldential.helper 'store --file ~/my-crede[0K[?25h[?25ldential.helper 'store --file ~/my-cred[0K[?25h[?25ldential.helper 'store --file ~/my-cre[0K[?25h[?25ldential.helper 'store --file ~/my-cr[0K[?25h[?25ldential.helper 'store --file ~/my-c[0K[?25h[?25ldential.helper 'store --file ~/my-[0K[?25h[?25ldential.helper 'store --file ~/my[0K[?25h[?25ldential.helper 'store --file ~/m[0K[?25h[?25ldential.helper 'store --file ~/[0K[?25h[?25ldential.helper 'store --file ~[0K[?25h[?25ldential.helper 'store --file[0K[30G[?25h[29G[?25ldential.helper 'store --fil[0K[?25h[?25ldential.helper 'store --fi[0K[?25h[?25ldential.helper 'store --f[0K[?25h[?25ldential.helper 'store --[0K[?25h[?25ldential.helper 'store -[0K[?25h[?25ldential.helper 'store[0K[23G[?25h[22G[?25ldential.helper 'stor[0K[?25h[?25ldential.helper 'sto[0K[?25h[?25ldential.helper 'st[0K[?25h[?25ldential.helper 's[0K[?25h[?25ldential.helper '[0K[?25h[?25ldential.helper[0K[16G[?25h[15G[?25ldential.helpe[0K[?25h[?25ldential.help[0K[?25h[?25ldential.hel[0K[?25h[?25ldential.he[0K[?25h[?25ldential.[0K[?25h[?25ldential[0K[?25h[?25ldentia[0K[?25h[?25ldenti[0K[?25h[?25ldent[0K[?25h[?25lden[0K[?25h[?25lde[0K[?25h[?25ld[0K[?25h[?25l[0K[?25h[?25l[1AC:\Users\PrevBeast\Documents\GitHub\previs>git config -global cr[0K
+[0K[1A[65G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -global c[0K
+[0K[1A[64G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -global[0K
+[0K[1A[63G[?25h[62G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -globa[0K
+[0K[1A[61G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -glob[0K
+[0K[1A[60G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -glo[0K
+[0K[1A[59G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -gl[0K
+[0K[1A[58G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -g[0K
+[0K[1A[57G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -[0K
+[0K[1A[56G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config[0K
+[0K[1A[55G[?25h[54G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git confi[0K
+[0K[1A[53G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git conf[0K
+[0K[1A[52G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git con[0K
+[0K[1A[51G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git conf[0K
+[0K[1A[52G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git confi[0K
+[0K[1A[53G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git confin[0K
+[0K[1A[54G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git confi[0K
+[0K[1A[53G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config[0K
+[0K[1A[54G[?25h[55G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config -[0K
+[0K[1A[56G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --[0K
+[0K[1A[57G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --g[0K
+[0K[1A[58G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --gl[0K
+[0K[1A[59G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --glo[0K
+[0K[1A[60G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --glov[0K
+[0K[1A[61G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --glo[0K
+[0K[1A[60G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --glob[0K
+[0K[1A[61G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --globa[0K
+[0K[1A[62G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --global[0K
+[0K[1A[63G[?25h[64G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --global c[0K
+[0K[1A[65G[?25h[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git config --global c[0Kr
+[0K[?25he[0Kd[0Ke[0Kn[0Kt[0Ki[0Ka[0Kl[0K.[0Kh[0Ke[0Kl[0Kp[0Ke[0Kr[0K[17G[?25ledential.helper '[0K[?25hs[0Kt[0Ko[0Kr[0Ke[0K[24G[?25ledential.helper 'store -[0K[?25h-[0Kf[0Ki[0Kl[0Ke[0K~[0K[?25ledential.helper 'store --file[0K[?25h[31G[?25ledential.helper 'store --file ~[0K[?25h/[0Km[0Ky[0K-[0Kc[0Kr[0Ke[0Kd[0Ke[0Kn[0Kt[0Ki[0Ka[0Kl[0Ks[0K'[0K]0;  - git  config --global credential.helper 'store --file ~/my-credentials'[?25l
+[0K[?25h]0; usage: git config [<options>][0K[?25l
+[0K
+Config file location[0K
+    --global              use global config file[0K
+    --system              use system config file[0K
+    --local               use repository config file[0K
+    -f, --file <file>     use given config file[0K
+    --blob <blob-id>      read config from given blob object[0K
+[0K
+Action[0K
+    --get                 get value: name [value-regex][0K
+    --get-all             get all values: key [value-regex][0K
+    --get-regexp          get values for regexp: name-regex [val[0Ku
+e-regex][0K
+    --get-urlmatch        get value specific for the URL: sectio[0Kn
+[.var] URL[0K
+    --replace-all         replace all matching variables: name v[0Ka
+lue [value_regex][0K
+    --add                 add a new variable: name value[0K
+    --unset               remove a variable: name [value-regex][0K
+    --unset-all           remove all matches: name [value-regex][0K
+    --rename-section      rename section: old-name new-name[0K
+    --remove-section      remove a section: name[0K
+    -l, --list            list all[0K
+    -e, --edit            open an editor[0K
+    --get-color           find the color configured: slot [defau[0Kl
+t][0K
+    --get-colorbool       find the color setting: slot [stdout-i[0Ks
+-tty][0K
+[0K
+Type[0K
+    -t, --type <>         value is given this type[0K
+    --bool                value is "true" or "false"[0K
+    --int                 value is decimal number[0K
+    --bool-or-int         value is --bool or --int[0K
+    --path                value is a path (file or directory nam[0Ke
+)[0K
+    --expiry-date         value is an expiry date[0K
+[0K
+Other[0K
+    -z, --null            terminate values with NUL byte[0K
+    --name-only           show variable names only[0K
+    --includes            respect include directives on lookup[0K
+    --show-origin         show origin of config (file, standard [0Ki
+nput, blob, command line)[0K
+    --default <value>     with --get, use default value when mis[0Ks
+ing entry[0K
+[0K
+[0K
+C:\Users\PrevBeast\Documents\GitHub\previs>[0K[?25hg[0Ki[0Kt[0K[48G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git c[0K[?25hr[0Ke[0Kd[0Ke[0Kn[0Kt[0Ki[0Ka[0Kl[0K[59G[58G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git credential-[0K[?25hs[0Kt[0Ko[0Kr[0Ke[0K[65G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git credential-store [0K-
+[0K[?25h-[0Kf[0Ki[0Kl[0Ke[0K[7G[?25l-file ~[0K[?25hg[0Ki[0Kt[0K/[0K[?25l-file ~git[0K[?25h[?25l-file ~gi[0K[?25h[?25l-file ~g[0K[?25h[?25l-file ~[0K[?25h?[0Kg[0Ki[0Kt[0K[?25l-file ~?gi[0K[?25h[?25l-file ~?g[0K[?25h[?25l-file ~?[0K[?25h[?25l-file ~[0K[?25h/[0Kg[0Ki[0Kt[0K.[0Ks[0Kt[0Ko[0Kr[0Ke[0K[19G[?25l-file ~/git.store s[0K[?25ht[0Ko[0Kr[0Ke[0K]0;  - git  credential-store --file ~/git.store store[?25l
+[0K[?25h]0; git: 'credential-store' is not a git command. See 'git --help'.[0K[?25l
+[0K
+C:\Users\PrevBeast\Documents\GitHub\previs>[0K[?25hg[0Ki[0Kt[0K[48G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git p[0K[?25hu[0Ks[0Kh[0K]0;  - git  push[?25l
+[0K[?25hgit: 'credential-cache' is not a git command. See 'git --help'.[0K[?25l
+error: cannot spawn rpostback-askpass: No such file or directory[0K
+Username for 'https://github.com':[0K[36G[?25h[?25lUsername for 'https://github.com': t[0K[?25hs[0Ko[0Kle[0Ka[0Kr[0Ky[0K[?25l
+[0K[?25herror: cannot spawn rpostback-askpass: No such file or directory[0K[?25l
+Password for 'https://tsoleary@github.com':[0K[45G[?25h[?25l
+[0K[?25hgit: 'credential-cache' is not a git command. See 'git --help'.[0K[?25l
+[0K[?25hEnumerating objects: 5, done.[0K[?25l
+Counting objects: 100% (5/5), done.[0K
+Delta compression using up to 24 threads[0K
+Compressing objects: 100% (3/3), done.[0K
+Writing objects: 100% (3/3), 569 bytes | 569.00 KiB/s, done.[0K
+Total 3 (delta 2), reused 0 (delta 0)[0K
+[0K[?25hremote: Resolving deltas: 100% (2/2), completed with 2 local obj[0Ke[?25l
+cts.[0K
+[0K[?25hTo https://github.com/tsoleary/previs.git[0K[?25l
+   27f1968..674748d  lab -> lab[0K
+[0K[?25h]0; [?25l
+C:\Users\PrevBeast\Documents\GitHub\previs>[0K[?25hg[0Ki[0Kr[0K[?25lC:\Users\PrevBeast\Documents\GitHub\previs>gi[0K[?25ht[0K[48G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git p[0K[?25hu[0Ks[0Kh[0K]0;  - git  push[?25l
+[0K[?25hgit: 'credential-cache' is not a git command. See 'git --help'.[0K[?25l
+error: cannot spawn rpostback-askpass: No such file or directory[0K
+Username for 'https://github.com':[0K[36G[?25h[?25lUsername for 'https://github.com': t[0K[?25hs[0Ko[0Kl[0Ke[0Ka[0Kr[0Ky[0K1[0K2[0K[?25lUsername for 'https://github.com': tsoleary1[0K[?25h[?25lUsername for 'https://github.com': tsoleary[0K[?25h[?25l
+[0K[?25herror: cannot spawn rpostback-askpass: No such file or directory[0K[?25l
+Password for 'https://tsoleary@github.com':[0K[45G[?25h[?25l
+[0K[?25hgit: 'credential-cache' is not a git command. See 'git --help'.[0K[?25l
+[0K[?25hEnumerating objects: 11, done.[0K[?25l
+Counting objects: 100% (11/11), done.[0K
+Delta compression using up to 24 threads[0K
+Compressing objects:  77% (7/9)[0K[3G[?25h[?25lCompressing objects: 100% (9/9), done.[0K
+Writing objects: 100% (9/9), 1.44 KiB | 1.44 MiB/s, done.[0K
+Total 9 (delta 6), reused 0 (delta 0)[0K
+[0K[?25hremote: Resolving deltas: 100% (6/6), completed with 2 local objects.[0K[?25l
+[0K[?25hTo https://github.com/tsoleary/previs.git[0K[?25l
+   674748d..b5eb1c1  lab -> lab[0K
+[0K[?25h]0; [?25l
+C:\Users\PrevBeast\Documents\GitHub\previs>[0K[?25hg[0Ki[0Kt[0K[48G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git p[0K[?25hu[0Ks[0Kh[0K]0;  - git  push[?25l
+[0K[?25hgit: 'credential-cache' is not a git command. See 'git --help'.[0K[?25l
+error: cannot spawn rpostback-askpass: No such file or directory[0K
+Username for 'https://github.com':[0K[36G[?25h[?25lUsername for 'https://github.com': t[0K[?25hs[0Ko[0Kl[0Ke[0Ka[0Kr[0Ky[0K[?25l
+[0K[?25herror: cannot spawn rpostback-askpass: No such file or directory[0K[?25l
+Password for 'https://tsoleary@github.com':[0K[45G[?25h[?25l
+[0K[?25hgit: 'credential-cache' is not a git command. See 'git --help'.[0K[?25l
+[0K[?25hEnumerating objects: 8, done.[0K[?25l
+Counting objects: 100% (8/8), done.[0K
+Delta compression using up to 24 threads[0K
+Compressing objects:  16% (1/6)[0K[1G[?25hCompressing objects: 100% (6/6), done.[0K[?25l
+Writing objects: 100% (6/6), 1.05 KiB | 1.05 MiB/s, done.[0K
+Total 6 (delta 4), reused 0 (delta 0)[0K
+[0K[?25hremote: Resolving deltas: 100% (4/4), completed with 2 local objects.[0K[?25l
+[0K[?25hTo https://github.com/tsoleary/previs.git[0K[?25l
+   b5eb1c1..35c05c9  lab -> lab[0K
+[0K[?25h]0; [?25l
+C:\Users\PrevBeast\Documents\GitHub\previs>[0K[?25hg[0Ki[0Kt[0K[48G[?25lC:\Users\PrevBeast\Documents\GitHub\previs>git p[0K[?25hu[0Ks[0Kh[0K]0;  - git  push[?25l
+[0K[?25hgit: 'credential-cache' is not a git command. See 'git --help'.[0K[?25l
+error: cannot spawn rpostback-askpass: No such file or directory[0K
+Username for 'https://github.com':[0K[36G[?25h[?25lUsername for 'https://github.com': g[0K[?25hi[0Kt[0K[40G[?25lUsername for 'https://github.com': git -[0K[?25h-[0K[?25lUsername for 'https://github.com': git -[0K[?25h[?25lUsername for 'https://github.com': git[0K[40G[?25h[39G[?25lUsername for 'https://github.com': gi[0K[?25h[?25lUsername for 'https://github.com': g[0K[?25h[?25lUsername for 'https://github.com':[0K[36G[?25h[?25lUsername for 'https://github.com': t[0K[?25hs[0Ko[0Kl[0Ke[0Ka[0Kr[0Ky[0K[?25l
+error: cannot spawn rpostback-askpass: No such file or directory[0K
+Password for 'https://tsoleary@github.com':[0K[45G[?25h[?25l
+[0K[?25hgit: 'credential-cache' is not a git command. See 'git --help'.[0K[?25l
+[0K[?25hEnumerating objects: 8, done.[0K[?25l
+Counting objects: 100% (8/8), done.[0K
+Delta compression using up to 24 threads[0K
+Compressing objects: 100% (6/6), done.[0K
+Writing objects: 100% (6/6), 1023 bytes | 1023.00 KiB/s, done.[0K
+Total 6 (delta 4), reused 0 (delta 0)[0K
+[0K[?25hremote: Resolving deltas: 100% (4/4), completed with 2 local objects.[0K[?25l
+[0K[?25hTo https://github.com/tsoleary/previs.git[0K[?25l
+   35c05c9..e105f22  lab -> lab[0K
+[0K[?25h]0; [?25l
+C:\Users\PrevBeast\Documents\GitHub\previs>[0K[?25h

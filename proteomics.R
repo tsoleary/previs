@@ -2,8 +2,8 @@
 
 library(tidyverse)
 
-setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse") 
-data_raw <- read.csv("WT vs KO_pep.csv")
+setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse")
+data_raw <- read.csv("WT vs KO all pep.csv")
 
 # Normalization ----------------------------------------------------------------
 
@@ -23,13 +23,13 @@ data_raw$ctrl_raw_med <- as_group(data_raw, ctrl_raw)
 # set the max number of peptides used in analysis
 max_pep <- 15
 
-data <- 
-  tbl_df(data_raw) %>% 
-  group_by(Master.Protein.Accessions) %>% 
+data <-
+  tbl_df(data_raw) %>%
+  group_by(Master.Protein.Accessions) %>%
   top_n(n = max_pep, wt = ctrl_raw_med)
 
 # proteins used for normalization
-norm_pro <- "B2RQQ1; Q91Z83" 
+norm_pro <- "B2RQQ1; Q91Z83"
 
 norm_pep <- subset(data, data$Master.Protein.Accessions == norm_pro)
 numeric_cols <- which(sapply(norm_pep, is.numeric) == TRUE)
@@ -65,7 +65,7 @@ count_df <- function (dat, col, dup = 1){
   list <- NULL
   for (i in 1:nrow(dat)){
     temp <- length(which(!is.na(dat[i, col])))
-    temp <- temp / dup 
+    temp <- temp / dup
     if(temp >= 1){
       temp <- temp - 1
     }
@@ -78,14 +78,14 @@ count_df <- function (dat, col, dup = 1){
 data$group1_df <- count_df(data, group1, dup = 3)
 data$ctrl_df <- count_df(data, ctrl, dup = 3)
 
-# Removing rows with NA values for the median 
+# Removing rows with NA values for the median
 data <- data[!(is.na(data$ratio)), ]
 
 # Data frame with only top few ionizing peptides
 pep_top <- 3
-data_top <- 
-  tbl_df(data) %>% 
-  group_by(Master.Protein.Accessions) %>% 
+data_top <-
+  tbl_df(data) %>%
+  group_by(Master.Protein.Accessions) %>%
   top_n(n = pep_top, wt = ctrl_med) %>%
   as.data.frame
 
@@ -101,23 +101,23 @@ protein_group <- function (dat, groups, FUN = mean){
                    na.rm = TRUE)
     tab <- cbind(tab, temp)
   }
-  colnames(tab) <- groups 
+  colnames(tab) <- groups
   return(tab)
 }
 
 group_names <- c("group1_med", "ctrl_med")
 
-protein <- protein_group(data_top, group_names) %>% 
+protein <- protein_group(data_top, group_names) %>%
   as.data.frame %>%
   rownames_to_column("Master.Protein.Accessions")
 
-protein$Master.Protein.Accessions <- 
-  protein$Master.Protein.Accessions %>% 
+protein$Master.Protein.Accessions <-
+  protein$Master.Protein.Accessions %>%
   as.character
 
 # Standard deviation of grouped relative abundance using top ionizers
 square_x_df <- function (dat, group_sd, group_df){
-  (dat[, group_sd])^2 * (dat[, group_df]) 
+  (dat[, group_sd])^2 * (dat[, group_df])
 }
 
 data_top$group1_sd_df <- square_x_df(data_top, "group1_sd", "group1_df")
@@ -140,14 +140,14 @@ protein <- cbind(protein, group1_pooled_sd, ctrl_pooled_sd)
 pro_data <- c("ratio")
 for (col in pro_data){
   temp <- tapply(data[, col],
-                 data$Master.Protein.Accessions, 
-                 mean, 
+                 data$Master.Protein.Accessions,
+                 mean,
                  na.rm = TRUE)
   protein_table <- cbind(protein_table, temp)
 }
 
 # Standard deviation relative protein abundance ratio
-ratio_sd_pep <- NULL 
+ratio_sd_pep <- NULL
 for (i in 1:nrow(data)){
   temp1 <- (data[i, "group1_sd"] / data[i, "group1_med"])^2
   temp2 <- (data[i, "ctrl_sd"] / data[i, "ctrl_med"])^2
@@ -162,14 +162,14 @@ data$ratio_sd_df <- (data$ratio_sd_pep)^2 * data$ratio_df
 
 temp_df <- NULL
 
-ratio_df_sum <- tapply(data$ratio_df, 
-                       data$Master.Protein.Accessions, 
-                       sum, 
+ratio_df_sum <- tapply(data$ratio_df,
+                       data$Master.Protein.Accessions,
+                       sum,
                        na.rm = TRUE)
 
-ratio_sd_df_sum <- tapply(data$ratio_sd_df, 
-                       data$Master.Protein.Accessions, 
-                       sum, 
+ratio_sd_df_sum <- tapply(data$ratio_sd_df,
+                       data$Master.Protein.Accessions,
+                       sum,
                        na.rm = TRUE)
 
 temp_df <- cbind(ratio_df_sum, ratio_sd_df_sum)
@@ -178,12 +178,6 @@ ratio_sd <- temp_df$ratio_sd_df_sum / temp_df$ratio_df_sum
 
 protein_table <- cbind(protein_table, ratio_sd)
 colnames(protein_table) <- c(pro_med, sd_calc, pro_data, "ratio_sd")
-
-# Minimum number of peptides for each protein group 
-
-min_pep <- 5 
-protein_df$peptides <- table(data$Master.Protein.Accessions)
-protein_min <- filter(protein_df, protein_df$peptides >= min_pep)
 
 # Statistics -------------------------------------------------------------------
 log_norm <- log(data[, c(group1, ctrl)])
@@ -219,9 +213,14 @@ protein_df <- as.data.frame(protein_table)
 
 protein_df <- full_join(protein_df, pro_pvals, by = "Master.Protein.Accessions")
 # Warning - joining character vector and factor
-protein_df$Master.Protein.Accessions <- 
+protein_df$Master.Protein.Accessions <-
   as.factor(protein_df$Master.Protein.Accessions)
 
+# Minimum number of peptides for each protein group
+
+min_pep <- 5 
+protein_df$peptides <- table(data$Master.Protein.Accessions)
+protein_min <- filter(protein_df, protein_df$peptides >= min_pep)
 
 # Converting Protein Accession to Gene Symbol ----------------------------------
 gene_df <- read.csv('mouse_PD_accession_gene.csv')
@@ -242,10 +241,7 @@ protein_df$gene <- mpa_to_gene(protein_df, gene_df)
 
 # Remove outliers --------------------------------------------------------------
 
-# Removing rows with NA values for the median 
+# Removing rows with NA values for the median
 data <- data[!(...), ]
 
 #home
-
-
- 
