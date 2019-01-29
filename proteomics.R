@@ -58,7 +58,7 @@ data$ctrl_sd <- as_group(data, ctrl, FUN = sd)
 
 # Relative abundance ratio for each peptide
 ratio <- data$group1_med / data$ctrl_med
-data$ratio <- ratio
+data$ratio <- ratio 
 
 # Function to count degrees of freedom in a group, defaults witout duplicates
 count_df <- function (dat, col, dup = 1){
@@ -134,7 +134,7 @@ ctrl_pooled_sd <- temp_df$ctrl_sd_df / temp_df$ctrl_df
 protein <- cbind(protein, group1_pooled_sd, ctrl_pooled_sd)
 
 # Grouped relative protein abundance ratio
-protein$ratio <- protein_group(data, "ratio")
+protein$ratio <- protein_group(data, "ratio") %>% as.numeric
 
 # Taylor Expansion to get the sd of the ratio of two means
 ratio_sd <- function (dat, ratio, group1_sd, group1_med, ctrl_sd, ctrl_med){
@@ -164,6 +164,8 @@ protein <- cbind(protein, ratio_sd)
 
 # Statistics -------------------------------------------------------------------
 # edit from here
+
+# edit the way that the log values are set up 
 log_norm <- log(data[, c(group1, ctrl)])
 colnames(log_norm) <- paste(colnames(log_norm), sep = "_", "log")
 data <- cbind(data, log_norm)
@@ -178,37 +180,37 @@ colnames(group1_stack) <- c("Master.Protein.Accessions", "group1_log", "samp")
 ctrl_stack <- data.frame(data[, 3], stack(data[, ctrl_log_cols]))
 colnames(ctrl_stack) <- c("Master.Protein.Accessions", "ctrl_log", "ctrl")
 
-
 stacked <- cbind(group1_stack, ctrl_stack[, 2:3])
 
-protein <- NULL
-p_vals <- NULL
-for (pro in unique(stacked$Master.Protein.Accessions)){
-  temp <- filter(stacked, stacked$Master.Protein.Accessions == pro)
-  p_val_temp <- t.test(temp$group1_log, temp$ctrl_log)$p.value
-  protein <- c(protein, pro)
-  p_vals <- c(p_vals, p_val_temp)
+# t-test function
+pval_ttest <- function (dat, group, ctrl){
+  Master.Protein.Accessions <- NULL
+  p_value <- NULL
+  for (pro in unique(dat$Master.Protein.Accessions)){
+    temp <- filter(dat, dat$Master.Protein.Accessions == pro)
+    pval_temp <- t.test(temp[, group], temp[, ctrl])$p.value
+    Master.Protein.Accessions <- c(Master.Protein.Accessions, pro)
+    p_value <- c(p_value, pval_temp)
+  }
+  return(as.data.frame(cbind(Master.Protein.Accessions, p_value)))
 }
 
-pro_pvals <- as.data.frame(cbind(protein, p_vals))
-colnames(pro_pvals) <- c("Master.Protein.Accessions", "p-value")
+p_vals <- pval_ttest(stacked, "group1_log", "ctrl_log")
+p_vals$Master.Protein.Accessions <-
+  p_vals$Master.Protein.Accessions %>% 
+    as.character
 
-protein_df <- as.data.frame(protein_table)
-
-protein_df <- full_join(protein_df, pro_pvals, by = "Master.Protein.Accessions")
-# Warning - joining character vector and factor
-protein_df$Master.Protein.Accessions <-
-  as.factor(protein_df$Master.Protein.Accessions)
+protein <- full_join(protein, p_vals, by = "Master.Protein.Accessions")
 
 # Minimum number of peptides for each protein group
-
 min_pep <- 5 
-protein_df$peptides <- table(data$Master.Protein.Accessions)
-protein_min <- filter(protein_df, protein_df$peptides >= min_pep)
+protein$peptides <- table(data$Master.Protein.Accessions)
+protein <- filter(protein, protein$peptides >= min_pep)
 
-# Converting Protein Accession to Gene Symbol ----------------------------------
+# Converting protein accession to gene symbol ----------------------------------
 gene_df <- read.csv('mouse_PD_accession_gene.csv')
 
+# Convert Master.Protein.Accession to gene symbol
 mpa_to_gene <- function (dat, gene_dat){
   dat$gene <- dat$Master.Protein.Accessions
   for (i in 1:nrow(dat)){
@@ -221,11 +223,10 @@ mpa_to_gene <- function (dat, gene_dat){
 }
 
 data$gene <- mpa_to_gene(data, gene_df)
-protein_df$gene <- mpa_to_gene(protein_df, gene_df)
+protein$gene <- mpa_to_gene(protein, gene_df)
 
 # Remove outliers --------------------------------------------------------------
 
 # Removing rows with NA values for the median
 data <- data[!(...), ]
 
-#home
