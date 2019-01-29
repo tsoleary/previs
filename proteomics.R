@@ -124,7 +124,6 @@ data_top$group1_sd_df <- square_x_df(data_top, "group1_sd", "group1_df")
 data_top$ctrl_sd_df <- square_x_df(data_top, "ctrl_sd", "ctrl_df")
 
 # Creating a temp data frame to calculate the ratio sd
-
 temp_df <- NULL # initialize data frame
 sd_sum <- c("group1_sd_df", "ctrl_sd_df", "group1_df", "ctrl_df")
 temp_df <- protein_group(data_top, sd_sum, FUN = sum)
@@ -155,28 +154,16 @@ data$ratio_sd <- ratio_sd(data, "ratio", "group1_sd", "group1_med",
 
 # Standard deviation grouped relative protein abundance ratio
 data$ratio_df <- data$group1_df + data$ctrl_df
-data$ratio_sd_df <- (data$ratio_sd_pep)^2 * data$ratio_df
+data$ratio_sd_df <- square_x_df(data, "ratio_sd", "ratio_df")
 
-temp_df <- NULL
+sd_calc <- c("ratio_df", "ratio_sd_df")
+temp_df <- protein_group(data, sd_calc, FUN = sum) %>% as.data.frame
 
-ratio_df_sum <- tapply(data$ratio_df,
-                       data$Master.Protein.Accessions,
-                       sum,
-                       na.rm = TRUE)
-
-ratio_sd_df_sum <- tapply(data$ratio_sd_df,
-                       data$Master.Protein.Accessions,
-                       sum,
-                       na.rm = TRUE)
-
-temp_df <- cbind(ratio_df_sum, ratio_sd_df_sum)
-temp_df <- as.data.frame(temp_df)
-ratio_sd <- temp_df$ratio_sd_df_sum / temp_df$ratio_df_sum
-
-protein_table <- cbind(protein_table, ratio_sd)
-colnames(protein_table) <- c(pro_med, sd_calc, pro_data, "ratio_sd")
+ratio_sd <- temp_df$ratio_sd_df / temp_df$ratio_df
+protein <- cbind(protein, ratio_sd)
 
 # Statistics -------------------------------------------------------------------
+# edit from here
 log_norm <- log(data[, c(group1, ctrl)])
 colnames(log_norm) <- paste(colnames(log_norm), sep = "_", "log")
 data <- cbind(data, log_norm)
