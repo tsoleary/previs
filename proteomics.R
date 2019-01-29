@@ -231,15 +231,39 @@ sd_ratio_pep <- protein_group(data, "ratio" , FUN = sd) %>%
   'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
 
 # creates a temp data frame that has max and min ratio values for each protein
+# can probably make part of this a function for later
 protein_temp <- full_join(protein, sd_ratio_pep, by = "Master.Protein.Accessions")
 protein_temp$max_ratio <- protein_temp$ratio + 2 * protein_temp$sd_ratio
 protein_temp$min_ratio <- protein_temp$ratio - 2 * protein_temp$sd_ratio
 
 # Remove peptides based on the above limits
 
+rm_outliers <- function (dat){
+  data_rm_out <- NULL
+  for (pro in unique(dat$Master.Protein.Accessions)){
+    temp <- filter(dat, dat$Master.Protein.Accessions == pro)
+    rm <- which(temp$ratio > protein_temp[pro, "max_ratio"] | temp$ratio < protein_temp[pro, "min_ratio"])
+    temp_rm <- temp[-rm, ]
+  }
+  data_rm_out <- bind_rows(data_rm_out, temp_rm)
+  return(data_rm_out)
+}
+
+temp <- filter(data, data$Master.Protein.Accessions == "B2RWW8; B2RQQ1; Q91Z83")
+which(temp$ratio > protein_temp["B2RWW8; B2RQQ1; Q91Z83", "max_ratio"] | temp$ratio < protein_temp["B2RWW8; B2RQQ1; Q91Z83", "min_ratio"])
+
+which(temp$ratio > protein_temp["B2RWW8; B2RQQ1; Q91Z83", "max_ratio"])
+
+which(temp$ratio > protein_temp[4, 12])
+
+protein_temp[4, 12]
+
+protein_temp["B2RWW8; B2RQQ1; Q91Z83", "max_ratio"]
+
+rm_outliers(data)
 
 
-
+#### Early attempts
 
 # Remove outliers function
 rm_outliers <- function (dat, ratio, mult = 2){
