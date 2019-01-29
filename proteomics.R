@@ -163,9 +163,6 @@ ratio_sd <- temp_df$ratio_sd_df / temp_df$ratio_df
 protein <- cbind(protein, ratio_sd)
 
 # Statistics -------------------------------------------------------------------
-# edit from here
-
-# edit the way that the log values are set up 
 log_norm <- log(data[, c(group1, ctrl)])
 colnames(log_norm) <- paste(colnames(log_norm), sep = "_", "log")
 data <- cbind(data, log_norm)
@@ -227,6 +224,30 @@ protein$gene <- mpa_to_gene(protein, gene_df)
 
 # Remove outliers --------------------------------------------------------------
 
-# Removing rows with NA values for the median
-data <- data[!(...), ]
+# sd of peptide ratios
+sd_ratio_pep <- protein_group(data, "ratio" , FUN = sd) %>% 
+  as.data.frame %>% 
+  rownames_to_column("Master.Protein.Accessions")
 
+# Remove outliers function
+rm_outliers <- function (dat, ratio){
+  
+  sd_ratio_pep <- protein_group(dat, ratio , FUN = sd) %>% 
+    as.data.frame %>% 
+    rownames_to_column("Master.Protein.Accessions")
+  
+  Master.Protein.Accessions <- NULL
+  sd_ratios <- NULL
+  
+  for (pro in unique(dat$Master.Protein.Accessions)){
+    temp <- filter(dat, dat$Master.Protein.Accessions == pro)
+    dat 
+    Master.Protein.Accessions <- c(Master.Protein.Accessions, pro)
+    sd_ratios <- c(sd_ratios, sd_temp)
+  }
+  return(as.data.frame(cbind(Master.Protein.Accessions, sd_ratios)))
+}
+
+rm_outliers(data, "ratio")
+
+data <- data[!(is.na(data$ratio)), ]
