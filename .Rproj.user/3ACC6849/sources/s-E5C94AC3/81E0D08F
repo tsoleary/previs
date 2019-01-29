@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1548694409825.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "81E0D08F",
+    "lastKnownWriteTime" : 1548776055,
+    "last_content_update" : 1548776055,
+    "path" : "~/GitHub/previs/proteomics.R",
+    "project_path" : "proteomics.R",
+    "properties" : {
+        "cursorPosition" : "123,0",
+        "scrollLine" : "112"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
