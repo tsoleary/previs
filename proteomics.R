@@ -3,7 +3,7 @@
 library(tidyverse)
 
 setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse")
-data_raw <- read.csv("WT vs KO all pep.csv")
+data_raw <- read.csv("WT vs KO_pep.csv")
 
 # Normalization ----------------------------------------------------------------
 
@@ -134,27 +134,24 @@ group1_pooled_sd <- temp_df$group1_sd_df / temp_df$group1_df
 ctrl_pooled_sd <- temp_df$ctrl_sd_df / temp_df$ctrl_df
 protein <- cbind(protein, group1_pooled_sd, ctrl_pooled_sd)
 
-# continue edits from here
+# Grouped relative protein abundance ratio
+protein$ratio <- protein_group(data, "ratio")
 
-# Grouped relative protein abundance ratio using all peptides
-pro_data <- c("ratio")
-for (col in pro_data){
-  temp <- tapply(data[, col],
-                 data$Master.Protein.Accessions,
-                 mean,
-                 na.rm = TRUE)
-  protein_table <- cbind(protein_table, temp)
+# Taylor Expansion to get the sd of the ratio of two means
+ratio_sd <- function (dat, ratio, group1_sd, group1_med, ctrl_sd, ctrl_med){
+  ratio_sd_pep <- NULL
+  for (i in 1:nrow(dat)){
+    temp1 <- (dat[i, group1_sd] / dat[i, group1_med])^2
+    temp2 <- (dat[i, ctrl_sd] / dat[i, ctrl_med])^2
+    result <- dat[i, ratio] * sqrt(temp1 + temp2)
+    ratio_sd_pep <- c(ratio_sd_pep, result)
+  }
+  return(ratio_sd_pep)
 }
 
 # Standard deviation relative protein abundance ratio
-ratio_sd_pep <- NULL
-for (i in 1:nrow(data)){
-  temp1 <- (data[i, "group1_sd"] / data[i, "group1_med"])^2
-  temp2 <- (data[i, "ctrl_sd"] / data[i, "ctrl_med"])^2
-  result <- data[i, "ratio"] * sqrt(temp1 + temp2)
-  ratio_sd_pep <- c(ratio_sd_pep, result)
-}
-data$ratio_sd_pep <- ratio_sd_pep
+data$ratio_sd <- ratio_sd(data, "ratio", "group1_sd", "group1_med", 
+                             "ctrl_sd", "ctrl_med")
 
 # Standard deviation grouped relative protein abundance ratio
 data$ratio_df <- data$group1_df + data$ctrl_df
