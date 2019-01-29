@@ -227,27 +227,50 @@ protein$gene <- mpa_to_gene(protein, gene_df)
 # sd of peptide ratios
 sd_ratio_pep <- protein_group(data, "ratio" , FUN = sd) %>% 
   as.data.frame %>% 
-  rownames_to_column("Master.Protein.Accessions")
+  rownames_to_column("Master.Protein.Accessions") %>%
+  'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
+
+# creates a temp data frame that has max and min ratio values for each protein
+protein_temp <- full_join(protein, sd_ratio_pep, by = "Master.Protein.Accessions")
+protein_temp$max_ratio <- protein_temp$ratio + 2 * protein_temp$sd_ratio
+protein_temp$min_ratio <- protein_temp$ratio - 2 * protein_temp$sd_ratio
+
+# Remove peptides based on the above limits
+
+
+
+
 
 # Remove outliers function
-rm_outliers <- function (dat, ratio){
-  
+rm_outliers <- function (dat, ratio, mult = 2){
   sd_ratio_pep <- protein_group(dat, ratio , FUN = sd) %>% 
     as.data.frame %>% 
-    rownames_to_column("Master.Protein.Accessions")
-  
+    rownames_to_column("Master.Protein.Accessions") %>%
+    'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
   Master.Protein.Accessions <- NULL
   sd_ratios <- NULL
-  
-  for (pro in unique(dat$Master.Protein.Accessions)){
-    temp <- filter(dat, dat$Master.Protein.Accessions == pro)
-    dat 
-    Master.Protein.Accessions <- c(Master.Protein.Accessions, pro)
-    sd_ratios <- c(sd_ratios, sd_temp)
+  for (pro in unique(dat$Master.Protein.Accession)){
+    
+    
+    for (i in 1:nrow(temp)){
+      great <- which(dat[i, ratio] > protein[, ratio] + mult * sd_ratio_pep)
+      less <- which(dat[i, ratio] < protein[, ratio] - mult * sd_ratio_pep)
+      rm_pep <- c(great, less)
+    }
   }
-  return(as.data.frame(cbind(Master.Protein.Accessions, sd_ratios)))
+  return(dat[-rm_pep, ])
+}
+
+# chunks of function code
+
+for (i in 1:nrow(data)){
+  great <- which(data[i, "ratio"] > protein["Q3UIK0", "ratio"] + 2 * sd_ratio_pep["Q3UIK0", "ratio"])
+  less <- which(data[i, "ratio"] < protein["Q3UIK0", "ratio"] - 2 * sd_ratio_pep["Q3UIK0", "ratio"])
+  rm_pep <- c(great, less)
 }
 
 rm_outliers(data, "ratio")
 
 data <- data[!(is.na(data$ratio)), ]
+
+
