@@ -18,7 +18,7 @@ as_group <- function (dat, col, FUN = median){
 }
 
 ctrl_raw <- grep("Control", colnames(data_raw))
-data_raw$ctrl_raw_med <- median_group(data_raw, ctrl_raw)
+data_raw$ctrl_raw_med <- as_group(data_raw, ctrl_raw)
 
 # set the max number of peptides used in analysis
 max_pep <- 15
@@ -49,8 +49,8 @@ data <- cbind(data, norm_test)
 group1 <- grep("Sample_norm", colnames(data))
 ctrl <- grep("Control_norm", colnames(data))
 
-data$group1_med <- median_group(data, group1)
-data$ctrl_med <- median_group(data, ctrl)
+data$group1_med <- as_group(data, group1)
+data$ctrl_med <- as_group(data, ctrl)
 
 # Standard deviation between samples for each peptide
 data$group1_sd <- as_group(data, group1, FUN = sd)
@@ -105,9 +105,14 @@ protein_group <- function (dat, groups, FUN = mean){
   return(tab)
 }
 
+group_names <- c("group1_med", "ctrl_med")
+
 protein <- protein_group(data_top, group_names) %>% 
   as.data.frame %>%
-  rownames_to_column("Master.Protein.Accessions") %>%
+  rownames_to_column("Master.Protein.Accessions")
+
+protein$Master.Protein.Accessions <- 
+  protein$Master.Protein.Accessions %>% 
   as.character
 
 # Standard deviation of grouped relative abundance using top ionizers
@@ -115,39 +120,21 @@ square_x_df <- function (dat, group_sd, group_df){
   (dat[, group_sd])^2 * (dat[, group_df]) 
 }
 
-data_top$group1_sd^2 * data_top$group1_df
-
 data_top$group1_sd_df <- square_x_df(data_top, "group1_sd", "group1_df")
 data_top$ctrl_sd_df <- square_x_df(data_top, "ctrl_sd", "ctrl_df")
 
 # Creating a temp data frame to calculate the ratio sd
-temp_df <- NULL
 
-sd_sum <- c("group1_sd_df", "ctrl_sd_df")
-for (col in sd_sum){
-  temp <- tapply(data_top[, col],
-                 data_top$Master.Protein.Accessions,
-                 sum,
-                 na.rm = TRUE)
-  temp_df <- cbind(temp_df, temp)
-}
+temp_df <- NULL # initialize data frame
+sd_sum <- c("group1_sd_df", "ctrl_sd_df", "group1_df", "ctrl_df")
+temp_df <- protein_group(data_top, sd_sum, FUN = sum)
 temp_df <- as.data.frame(temp_df)
 
-df_sum <- c("group1_df", "ctrl_df")
-for (col in df_sum){
-  temp <- tapply(data_top[, col],
-                 data_top$Master.Protein.Accessions,
-                 sum,
-                 na.rm = TRUE)
-  temp_df <- cbind(temp_df, temp)
-}
-colnames(temp_df) <- c(sd_sum, df_sum)
 group1_pooled_sd <- temp_df$group1_sd_df / temp_df$group1_df
 ctrl_pooled_sd <- temp_df$ctrl_sd_df / temp_df$ctrl_df
-protein_table <- cbind(protein_table, group1_pooled_sd, ctrl_pooled_sd)
-sd_calc <- c("group1_pooled_sd", "ctrl_pooled_sd")
+protein <- cbind(protein, group1_pooled_sd, ctrl_pooled_sd)
 
-# Old code #################
+# continue edits from here
 
 # Grouped relative protein abundance ratio using all peptides
 pro_data <- c("ratio")
