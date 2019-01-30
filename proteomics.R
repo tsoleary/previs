@@ -200,9 +200,9 @@ p_vals$Master.Protein.Accessions <-
 protein <- full_join(protein, p_vals, by = "Master.Protein.Accessions")
 
 # Minimum number of peptides for each protein group
-min_pep <- 5 
-protein$peptides <- table(data$Master.Protein.Accessions)
-protein <- filter(protein, protein$peptides >= min_pep)
+#min_pep <- 5 
+#protein$peptides <- table(data$Master.Protein.Accessions)
+#protein <- filter(protein, protein$peptides >= min_pep)
 
 # Converting protein accession to gene symbol ----------------------------------
 gene_df <- read.csv('mouse_PD_accession_gene.csv')
@@ -224,29 +224,30 @@ protein$gene <- mpa_to_gene(protein, gene_df)
 
 # Remove outliers --------------------------------------------------------------
 
-# sd of peptide ratios
-sd_ratio_pep <- protein_group(data, "ratio" , FUN = sd) %>% 
-  as.data.frame %>% 
-  rownames_to_column("Master.Protein.Accessions") %>%
-  'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
-
-# creates a temp data frame that has max and min ratio values for each protein
-# can probably make part of this a function for later
-protein_temp <- full_join(protein, sd_ratio_pep, by = "Master.Protein.Accessions")
-protein_temp$max_ratio <- protein_temp$ratio + 2 * protein_temp$sd_ratio
-protein_temp$min_ratio <- protein_temp$ratio - 2 * protein_temp$sd_ratio
-
-# Remove peptides based on the above limits
-rm_outliers <- function (dat){
+# Remove outliers in peptide data
+rm_outliers <- function (dat, ratio){
+  
+  sd_ratio_temp_df <- protein_group(dat, ratio, FUN = sd) %>% 
+    as.data.frame %>% 
+    rownames_to_column("Master.Protein.Accessions") %>%
+    'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
+  
+  pro_temp <- full_join(protein, sd_ratio_temp_df, 
+                        by = "Master.Protein.Accessions")
+  
+  pro_temp$max_ratio <- pro_temp$ratio + 2 * pro_temp$sd_ratio
+  pro_temp$min_ratio <- pro_temp$ratio - 2 * pro_temp$sd_ratio
+ 
   data_rm_out <- NULL
+  
   for (pro in unique(dat$Master.Protein.Accessions)){
     temp <- filter(dat, dat$Master.Protein.Accessions == pro)
     
-    rm_high <- which(temp$ratio > protein_temp$max_ratio[which(
-      protein_temp$Master.Protein.Accessions == pro)])
+    rm_high <- which(temp$ratio > pro_temp$max_ratio[which(
+      pro_temp$Master.Protein.Accessions == pro)])
     
-    rm_low <- which(temp$ratio < protein_temp$min_ratio[which(
-      protein_temp$Master.Protein.Accessions == pro)]) 
+    rm_low <- which(temp$ratio < pro_temp$min_ratio[which(
+      pro_temp$Master.Protein.Accessions == pro)]) 
     
     rm <- c(rm_high, rm_low)
     temp_rm <- temp[-rm, ]
@@ -255,6 +256,6 @@ rm_outliers <- function (dat){
   return(data_rm_out)
 }
 
-temp_test <- rm_outliers(data)
+data_rm_out <- rm_outliers(data, "ratio")
 
 
