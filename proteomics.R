@@ -237,64 +237,24 @@ protein_temp$max_ratio <- protein_temp$ratio + 2 * protein_temp$sd_ratio
 protein_temp$min_ratio <- protein_temp$ratio - 2 * protein_temp$sd_ratio
 
 # Remove peptides based on the above limits
-
 rm_outliers <- function (dat){
   data_rm_out <- NULL
   for (pro in unique(dat$Master.Protein.Accessions)){
     temp <- filter(dat, dat$Master.Protein.Accessions == pro)
-    rm <- which(temp$ratio > protein_temp[pro, "max_ratio"] | temp$ratio < protein_temp[pro, "min_ratio"])
+    
+    rm_high <- which(temp$ratio > protein_temp$max_ratio[which(
+      protein_temp$Master.Protein.Accessions == pro)])
+    
+    rm_low <- which(temp$ratio < protein_temp$min_ratio[which(
+      protein_temp$Master.Protein.Accessions == pro)]) 
+    
+    rm <- c(rm_high, rm_low)
     temp_rm <- temp[-rm, ]
+    data_rm_out <- bind_rows(data_rm_out, temp_rm)
   }
-  data_rm_out <- bind_rows(data_rm_out, temp_rm)
   return(data_rm_out)
 }
 
-temp <- filter(data, data$Master.Protein.Accessions == "B2RWW8; B2RQQ1; Q91Z83")
-which(temp$ratio > protein_temp["B2RWW8; B2RQQ1; Q91Z83", "max_ratio"] | temp$ratio < protein_temp["B2RWW8; B2RQQ1; Q91Z83", "min_ratio"])
-
-which(temp$ratio > protein_temp["B2RWW8; B2RQQ1; Q91Z83", "max_ratio"])
-
-which(temp$ratio > protein_temp[4, 12])
-
-protein_temp[4, 12]
-
-protein_temp["B2RWW8; B2RQQ1; Q91Z83", "max_ratio"]
-
-rm_outliers(data)
-
-
-#### Early attempts
-
-# Remove outliers function
-rm_outliers <- function (dat, ratio, mult = 2){
-  sd_ratio_pep <- protein_group(dat, ratio , FUN = sd) %>% 
-    as.data.frame %>% 
-    rownames_to_column("Master.Protein.Accessions") %>%
-    'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
-  Master.Protein.Accessions <- NULL
-  sd_ratios <- NULL
-  for (pro in unique(dat$Master.Protein.Accession)){
-    
-    
-    for (i in 1:nrow(temp)){
-      great <- which(dat[i, ratio] > protein[, ratio] + mult * sd_ratio_pep)
-      less <- which(dat[i, ratio] < protein[, ratio] - mult * sd_ratio_pep)
-      rm_pep <- c(great, less)
-    }
-  }
-  return(dat[-rm_pep, ])
-}
-
-# chunks of function code
-
-for (i in 1:nrow(data)){
-  great <- which(data[i, "ratio"] > protein["Q3UIK0", "ratio"] + 2 * sd_ratio_pep["Q3UIK0", "ratio"])
-  less <- which(data[i, "ratio"] < protein["Q3UIK0", "ratio"] - 2 * sd_ratio_pep["Q3UIK0", "ratio"])
-  rm_pep <- c(great, less)
-}
-
-rm_outliers(data, "ratio")
-
-data <- data[!(is.na(data$ratio)), ]
+temp_test <- rm_outliers(data)
 
 
