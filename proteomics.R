@@ -67,10 +67,10 @@ data <- data[!(is.na(data$ratio)), ]
 
 # Remove outliers --------------------------------------------------------------
 
-protein <- protein_group(data, "ratio") %>% as.data.frame %>%
+pro_out <- protein_group(data, "ratio") %>% as.data.frame %>%
   rownames_to_column("Master.Protein.Accessions")
 
-data <- rm_outliers(data, "ratio")
+data <- rm_outliers(data, pro_out, "ratio")
 
 # Data frame with only top few ionizing peptides -------------------------------
 pep_top <- 3

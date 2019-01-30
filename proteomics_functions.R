@@ -82,14 +82,14 @@ mpa_to_gene <- function (dat, gene_dat){
 }
 
 # Remove outliers in peptide data
-rm_outliers <- function (dat, ratio){
+rm_outliers <- function (dat, pro_df, ratio){
   
   sd_ratio_temp_df <- protein_group(dat, ratio, FUN = sd) %>% 
     as.data.frame %>% 
     rownames_to_column("Master.Protein.Accessions") %>%
     'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
   
-  pro_temp <- full_join(protein, sd_ratio_temp_df, 
+  pro_temp <- full_join(pro_df, sd_ratio_temp_df, 
                         by = "Master.Protein.Accessions")
   
   pro_temp$max_ratio <- pro_temp$ratio + 2 * pro_temp$sd_ratio
@@ -107,8 +107,12 @@ rm_outliers <- function (dat, ratio){
       pro_temp$Master.Protein.Accessions == pro)]) 
     
     rm <- c(rm_high, rm_low)
-    temp_rm <- temp[-rm, ]
-    data_rm_out <- bind_rows(data_rm_out, temp_rm)
+      if (length(rm) > 0){
+        temp_rm <- temp[-rm, ]
+        data_rm_out <- bind_rows(data_rm_out, temp_rm)
+      } else {
+        data_rm_out <- bind_rows(data_rm_out, temp)
+      }
   }
   return(data_rm_out)
 }
