@@ -113,6 +113,12 @@ rm_outliers <- function (dat, ratio){
   return(data_rm_out)
 }
 
+# Abundance ratio function
+abun_ratio <- function (dat, group, ctrl = "ctrl_med"){
+  dat[, group] / dat[, ctrl]
+}
+
+
 
 
 
