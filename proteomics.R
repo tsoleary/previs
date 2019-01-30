@@ -1,6 +1,7 @@
 # Proteomic analysis: Data imported from Proteome Discoverer 2.2 ---------------
 
 library(tidyverse)
+source("~/Github/previs/proteomic_functions.R")
 
 setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse")
 data_raw <- read.csv("WT vs KO_pep.csv")
