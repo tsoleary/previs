@@ -1,15 +1,12 @@
 # Proteomic analysis: Data imported from Proteome Discoverer 2.2 ---------------
 
 library(tidyverse)
+library(devtools)
 
-# Source proteomics_functions.R
-library(RCurl)
-URLgithub <- "https://raw.githubusercontent.com/tsoleary/previs/lab/"
-URLpro_func <- "proteomics_functions.R?token="
-URLlast <- "AsbOAcfdVDHqvyK5uAXyZcY-eoPL4ZiEks5cUeWBwA%3D%3D"
-wholeURL <- paste0(URLgithub, URLpro_func,URLlast)
-sourceURL <- getURL(wholeURL, ssl.verifypeer = FALSE) 
-eval(parse(text = sourceURL))
+# if proteomixr has been update
+# remove.packages("proteomixr") # remove old proteomixr
+# install_github("tsoleary/proteomixr") # to get latest version
+library("proteomixr")
 
 setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse")
 data_raw <- read.csv("WT vs KO_pep.csv")
@@ -17,7 +14,7 @@ data_raw <- read.csv("WT vs KO_pep.csv")
 # Normalization ----------------------------------------------------------------
 
 ctrl_raw <- grep("Control", colnames(data_raw))
-data_raw$ctrl_raw_med <- as_group(data_raw, ctrl_raw)
+data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
 # set the max number of peptides used in analysis
 max_pep <- 15
@@ -48,31 +45,32 @@ data <- cbind(data, norm_test)
 group1 <- grep("Sample_norm", colnames(data))
 ctrl <- grep("Control_norm", colnames(data))
 
-data$group1_med <- as_group(data, group1)
-data$ctrl_med <- as_group(data, ctrl)
+data$group1_med <- by_group(data, group1)
+data$ctrl_med <- by_group(data, ctrl)
 
 # Standard deviation between samples for each peptide
-data$group1_sd <- as_group(data, group1, FUN = sd)
-data$ctrl_sd <- as_group(data, ctrl, FUN = sd)
+data$group1_sd <- by_group(data, group1, FUN = sd)
+data$ctrl_sd <- by_group(data, ctrl, FUN = sd)
 
 # Relative abundance ratio for each peptide
 data$ratio <- abun_ratio(data, "group1_med")
 
 # Degrees of freedom
-data$group1_df <- count_df(data, group1, dup = 3)
-data$ctrl_df <- count_df(data, ctrl, dup = 3)
+data$group1_df <- count_df(data, group1, rep = 3)
+data$ctrl_df <- count_df(data, ctrl, rep = 3)
 
 # Removing rows with NA values for the median
 data <- data[!(is.na(data$ratio)), ]
 
 # Remove outliers --------------------------------------------------------------
 
-pro_out <- protein_group(data, "ratio") %>% as.data.frame %>%
+pro_out <- by_protein(data, "ratio") %>% as.data.frame %>%
   rownames_to_column("Master.Protein.Accessions")
 
 data <- rm_outliers(data, pro_out, "ratio")
 
 # Data frame with only top few ionizing peptides -------------------------------
+
 pep_top <- 3
 data_top <-
   tbl_df(data) %>%
@@ -84,7 +82,7 @@ data_top <-
 
 group_names <- c("group1_med", "ctrl_med")
 
-protein <- protein_group(data_top, group_names) %>%
+protein <- by_protein(data_top, group_names) %>%
   as.data.frame %>%
   rownames_to_column("Master.Protein.Accessions")
 
@@ -98,15 +96,14 @@ data_top$ctrl_sd_df <- square_x_df(data_top, "ctrl_sd", "ctrl_df")
 # Creating a temp data frame to calculate the ratio sd
 temp_df <- NULL 
 sd_sum <- c("group1_sd_df", "ctrl_sd_df", "group1_df", "ctrl_df")
-temp_df <- protein_group(data_top, sd_sum, FUN = sum)
-temp_df <- as.data.frame(temp_df)
+temp_df <- by_protein(data_top, sd_sum, FUN = sum) %>% as.data.frame
 
 group1_pooled_sd <- temp_df$group1_sd_df / temp_df$group1_df
 ctrl_pooled_sd <- temp_df$ctrl_sd_df / temp_df$ctrl_df
 protein <- cbind(protein, group1_pooled_sd, ctrl_pooled_sd)
 
 # Grouped relative protein abundance ratio
-protein$ratio <- protein_group(data, "ratio") %>% as.numeric
+protein$ratio <- by_protein(data, "ratio") %>% as.numeric
 
 # Standard deviation relative protein abundance ratio
 data$ratio_sd <- ratio_sd(data, "ratio", "group1_sd", "group1_med", 
@@ -117,7 +114,7 @@ data$ratio_df <- data$group1_df + data$ctrl_df
 data$ratio_sd_df <- square_x_df(data, "ratio_sd", "ratio_df")
 
 sd_calc <- c("ratio_df", "ratio_sd_df")
-temp_df <- protein_group(data, sd_calc, FUN = sum) %>% as.data.frame
+temp_df <- by_protein(data, sd_calc, FUN = sum) %>% as.data.frame
 
 ratio_sd <- temp_df$ratio_sd_df / temp_df$ratio_df
 protein <- cbind(protein, ratio_sd)
@@ -157,3 +154,7 @@ protein$gene <- mpa_to_gene(protein, gene_df)
 min_pep <- 5 
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
+
+# Group by sub-cellular compartment --------------------------------------------
+
+
