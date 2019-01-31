@@ -3,12 +3,12 @@
 library(tidyverse)
 library(devtools)
 
-# if proteomixr has been update
+# if proteomixr has been updated on github
 # remove.packages("proteomixr") # remove old proteomixr
 # install_github("tsoleary/proteomixr") # to get latest version
 library("proteomixr")
 
-setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse")
+setwd("C:/Users/PrevBeast/Documents/GitHub/previs")
 data_raw <- read.csv("WT vs KO_pep.csv")
 
 # Normalization ----------------------------------------------------------------
@@ -156,5 +156,7 @@ protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
 # Group by sub-cellular compartment --------------------------------------------
+
+read.table(file = 'drug_info.tsv', sep = '\t', header = TRUE)
 
 
