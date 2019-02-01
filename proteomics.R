@@ -8,7 +8,9 @@ library(devtools)
 # install_github("tsoleary/proteomixr") # to get latest version
 library("proteomixr")
 
-setwd("C:/Users/PrevBeast/Documents/GitHub/previs")
+#getwd()
+setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse")
+#setwd("C:/Users/PrevBeast/Documents/GitHub/previs")
 data_raw <- read.csv("WT vs KO_pep.csv")
 
 # Normalization ----------------------------------------------------------------
@@ -157,6 +159,30 @@ protein <- filter(protein, protein$peptides >= min_pep)
 
 # Group by sub-cellular compartment --------------------------------------------
 
-read.table(file = 'drug_info.tsv', sep = '\t', header = TRUE)
+human_sub_cell <- read.csv("compartments_human.csv")
+#Convert human to 
+
+
+
+
+# Group genes into subcellular compartments
+gene_to_group <- function (dat, group_dat){
+  dat$compartment <- dat$gene
+  for (i in 1:nrow(dat)){
+    temp <- which(dat$gene[i] == group_dat$Accession, TRUE)
+    if (length(temp) == 1){
+      dat$compartment <- gsub(dat$compartment, group_dat$Group[temp],
+                              dat$compartment)
+    }
+  }
+  return(dat$compartment)
+}
+
+# Group and average on protein level
+
+weighted.mean(c(2, 8, 1000), c(.99, .009, .001), na.rm = TRUE)
+
+
+# Group and average on peptide level
 
 
