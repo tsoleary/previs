@@ -174,18 +174,18 @@ human_sub_cell$mouse_gene <- capwords(as.character(human_sub_cell$Gene),
 
 # Group genes into subcellular compartments
 gene_to_group <- function (dat, group_dat){
-  dat$compartment <- dat$gene
+  dat$Compartment <- dat$gene
   for (i in 1:nrow(dat)){
     temp <- which(dat$gene[i] == group_dat$mouse_gene, TRUE)
     if (length(temp) == 1){
-      dat$compartment <- gsub(dat$compartment[i], group_dat[temp, "Group"],
-                              dat$compartment, ignore.case = TRUE)
+      dat$Compartment <- gsub(dat$Compartment[i], group_dat[temp, "Compartment"],
+                              dat$Compartment, ignore.case = TRUE)
     }
   }
   return(dat$compartment)
 }
 
-data$compartment <- gene_to_group(data, human_sub_cell)
+data$Compartment <- gene_to_group(data, human_sub_cell)
 
 # Group and average on protein level
 
