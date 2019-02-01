@@ -160,23 +160,32 @@ protein <- filter(protein, protein$peptides >= min_pep)
 # Group by sub-cellular compartment --------------------------------------------
 
 human_sub_cell <- read.csv("compartments_human.csv")
-#Convert human to 
 
+# Function from Character Translation and Casefolding
+capwords <- function(s, strict = FALSE) {
+  cap <- function(s) paste(toupper(substring(s, 1, 1)),
+                           {s <- substring(s, 2); if(strict) tolower(s) else s},
+                           sep = "", collapse = " " )
+  sapply(strsplit(s, split = " "), cap, USE.NAMES = !is.null(names(s)))
+}
 
-
+human_sub_cell$mouse_gene <- capwords(as.character(human_sub_cell$Gene), 
+                                      strict = TRUE)
 
 # Group genes into subcellular compartments
 gene_to_group <- function (dat, group_dat){
   dat$compartment <- dat$gene
   for (i in 1:nrow(dat)){
-    temp <- which(dat$gene[i] == group_dat$Accession, TRUE)
+    temp <- which(dat$gene[i] == group_dat$mouse_gene, TRUE)
     if (length(temp) == 1){
-      dat$compartment <- gsub(dat$compartment, group_dat$Group[temp],
-                              dat$compartment)
+      dat$compartment <- gsub(dat$compartment[i], group_dat[temp, "Group"],
+                              dat$compartment, ignore.case = TRUE)
     }
   }
   return(dat$compartment)
 }
+
+data$compartment <- gene_to_group(data, human_sub_cell)
 
 # Group and average on protein level
 
