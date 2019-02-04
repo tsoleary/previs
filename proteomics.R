@@ -169,30 +169,25 @@ capwords <- function(s, strict = FALSE) {
   sapply(strsplit(s, split = " "), cap, USE.NAMES = !is.null(names(s)))
 }
 
-human_sub_cell$mouse_gene <- capwords(as.character(human_sub_cell$Gene), 
+human_sub_cell$Gene <- capwords(as.character(human_sub_cell$Gene), 
                                       strict = TRUE)
 
-# Group genes into subcellular compartments
-gene_to_group <- function (dat, group_dat, level = "Compartment"){
-  dat$compartment <- dat$gene
-  for (i in 1:nrow(dat)){
-    temp <- which(dat$gene[i] == group_dat$mouse_gene, TRUE)
-    if (length(temp) == 1){
-      dat$compartment <- gsub(dat$compartment[i], 
-                              group_dat[temp, level],
-                              dat$compartment, ignore.case = TRUE)
-    }
-  }
-  return(dat$compartment)
-}
-
+# Group genes into subcellular compartments on data
 data$compartment <- gene_to_group(data, human_sub_cell)
 data$sub_compartment <- gene_to_group(data, human_sub_cell, 
                                       level = "Sub.compartment")
 
 # Group and average on protein level
 
-weighted.mean(c(2, 8, 1000), c(.99, .009, .001), na.rm = TRUE)
+protein$w_ratio <- cbind(sapply(split(data, data$compartment), 
+                        function (x) {weighted.mean(x$ratio, x$group1_med)}))
+
+weighted_ratio <- function (dat) {
+  weighted.mean(dat$ratio, dat$group1_med)
+}
+
+
+
 
 
 # Group and average on peptide level
