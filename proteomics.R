@@ -177,77 +177,27 @@ data$compartment <- gene_to_group(data, human_sub_cell)
 data$sub_compartment <- gene_to_group(data, human_sub_cell, 
                                       level = "Sub.compartment")
 
-sub(".; *", replacement = "", data$compartment)
-
-str_extract(data$compartment, as.character(unique(human_sub_cell$Compartment)))
-
-strng <- data$compartment
-for (pro in unique(human_sub_cell$Compartment)){
-  strng <- str_extract(strng, pro)
-}
-
+# Condense unique compartments into only one
 compart_list <- as.character(unique(human_sub_cell$Compartment))
 
 comp_simp <- data$compartment
-for (pro in compart_list){
+list <- NULL
+for (pro in compart_list) {
   for (i in 1:nrow(data)){
     if (str_detect(comp_simp[i], pro) == TRUE){
-        temp <- str_extract(comp_simp[i], pro)
-        comp_simp <- c(comp_simp, temp)
-    } else {
-      temp <- data$compartment[i]
-      comp_simp <- c(comp_simp, temp)
+      temp <- str_extract(comp_simp[i], pro)
+      comp_simp[i] <- temp
     }
   }
 }
-
-
-# works for sarcomere
-comp_simp <- data$compartment
-list <- NULL
-
-  for (i in 1:nrow(data)){
-    if (str_detect(comp_simp[i], "Sarcomere") == TRUE){
-      temp <- str_extract(comp_simp[i], "Sarcomere")
-      list <- c(list, temp)
-    } else {
-      temp <- comp_simp[i]
-      list <- c(list, temp)
-    }
-  }
-
-list
-
-
-
-
-#### test for all in 
-compart_list <- as.character(unique(human_sub_cell$Compartment))
-
-comp_simp <- data$compartment
-list <- NULL
-for (j in length(compart_list)) {
-  for (i in 1:nrow(data)){
-    if (str_detect(comp_simp[i], compart_list[j]) == TRUE){
-      temp <- str_extract(comp_simp[i], compart_list[j])
-      list <- c(list, temp)
-    } else {
-      temp <- comp_simp[i]
-      list <- c(list, temp)
-    }
-  }
-}
-
-list
-
-
 
 
 # Compartments ratio average
 weighted_ratio <- cbind(sapply(split(data, data$compartment), 
                         function (x) {weighted.mean(x$ratio, x$group1_med)}))
 
-
 # ttest
+
+# stack log values by compartment
 
 
