@@ -160,6 +160,7 @@ protein <- filter(protein, protein$peptides >= min_pep)
 # Group by sub-cellular compartment --------------------------------------------
 
 human_sub_cell <- read.csv("compartments_human.csv")
+human_sub_cell <- subset(human_sub_cell, !duplicated(human_sub_cell$Gene))
 
 # Function from Character Translation and Casefolding
 capwords <- function(s, strict = FALSE) {
@@ -191,13 +192,23 @@ for (pro in compart_list) {
   }
 }
 
+data$compartment <- comp_simp
 
 # Compartments ratio average
 weighted_ratio <- cbind(sapply(split(data, data$compartment), 
                         function (x) {weighted.mean(x$ratio, x$group1_med)}))
 
-# ttest
+# Statistics for compartments and sub-compartments------------------------------
 
-# stack log values by compartment
+g1stack <- data.frame(data[, "compartment"], stack(data[, group1_log_cols]))
+colnames(g1stack) <- c("compartment", "group1_log", "samp")
+
+ctrlstack <- data.frame(data[, "compartment"], stack(data[, ctrl_log_cols]))
+colnames(ctrlstack) <- c("compartment", "ctrl_log", "ctrl")
+
+stack2 <- cbind(g1stack, ctrlstack[, 2:3])
+
+p_val2 <- pval_ttest(stack2, "group1_log", "ctrl_log")
+
 
 
