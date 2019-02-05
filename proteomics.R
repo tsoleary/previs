@@ -138,6 +138,8 @@ colnames(stacked) <- c("Master.Protein.Accessions", "group1_log", "samp",
                         "ctrl_log", "ctrl")
 
 p_vals <- pval_ttest(stacked, "group1_log", "ctrl_log")
+colnames(p_vals)[1] <- "Master.Protein.Accessions"
+
 p_vals$Master.Protein.Accessions <-
   p_vals$Master.Protein.Accessions %>% 
     as.character
@@ -202,20 +204,8 @@ stack2 <- data.frame(data[, "compartment"], stack(data[, group1_log_cols]),
                      stack(data[, ctrl_log_cols]))
 colnames(stack2) <- c("compartment", "group1_log", "samp", "ctrl_log", "ctrl")
 
-pval_ttest2 <- function (dat, group, ctrl, col = "Master.Protein.Accessions"){
-  name <- NULL
-  p_value <- NULL
-  for (pro in unique(dat[, col])) {
-    temp <- dplyr::filter(dat, dat[, col] == pro)
-    pval_temp <- t.test(temp[, group], temp[, ctrl])$p.value
-    name <- c(name, pro)
-    p_value <- c(p_value, pval_temp)
-  }
-  return(as.data.frame(cbind(name, p_value)))
-}
-
-p_val2 <- pval_ttest2(stack2, "group1_log", "ctrl_log", col = "compartment")
-
+p_val2 <- pval_ttest(stack2, "group1_log", "ctrl_log", col = "compartment")
+colnames(p_val2)[1] <- "compartment"
 
 
 
