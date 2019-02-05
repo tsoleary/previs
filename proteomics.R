@@ -159,27 +159,17 @@ protein <- filter(protein, protein$peptides >= min_pep)
 
 # Group by sub-cellular compartment --------------------------------------------
 
-human_sub_cell <- read.csv("compartments_human.csv")
-human_sub_cell <- subset(human_sub_cell, !duplicated(human_sub_cell$Gene))
-
-# Function from Character Translation and Casefolding
-capwords <- function(s, strict = FALSE) {
-  cap <- function(s) paste(toupper(substring(s, 1, 1)),
-                           {s <- substring(s, 2); if(strict) tolower(s) else s},
-                           sep = "", collapse = " " )
-  sapply(strsplit(s, split = " "), cap, USE.NAMES = !is.null(names(s)))
-}
-
-human_sub_cell$Gene <- capwords(as.character(human_sub_cell$Gene), 
-                                      strict = TRUE)
+sub_cell_comp <- read.csv("sub_cell_comp_mouse.csv")
+sub_cell_comp <- subset(sub_cell_comp, !duplicated(sub_cell_comp$Gene))
 
 # Group genes into subcellular compartments on data
-data$compartment <- gene_to_comp(data, human_sub_cell)
-data$sub_compartment <- gene_to_comp(data, human_sub_cell, 
-                                      level = "Sub.compartment")
+data$compartment <- gene_to_comp(data, sub_cell_comp,
+                                 level = "compartment")
+data$sub_compartment <- gene_to_comp(data, sub_cell_comp, 
+                                      level = "sub_compartment")
 
 # Condense unique compartments into only one
-compart_list <- as.character(unique(human_sub_cell$Compartment))
+compart_list <- as.character(unique(sub_cell_comp$compartment))
 
 comp_simp <- data$compartment
 list <- NULL
@@ -187,7 +177,8 @@ for (pro in compart_list) {
   for (i in 1:nrow(data)){
     if (str_detect(comp_simp[i], pro) == TRUE){
       temp <- str_extract(comp_simp[i], pro)
-      comp_simp[i] <- temp
+    } else {
+    comp_simp[i] <- temp
     }
   }
 }
