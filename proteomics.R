@@ -1,17 +1,17 @@
 # Proteomic analysis: Data imported from Proteome Discoverer 2.2 ---------------
 
-library(tidyverse)
-library(devtools)
+library("tidyverse")
+library("devtools")
 
 # if proteomixr has been updated on github
-# remove.packages("proteomixr") # remove old proteomixr
-# install_github("tsoleary/proteomixr") # to get latest version
+remove.packages("proteomixr") # remove old proteomixr
+install_github("tsoleary/proteomixr") # to get latest version
 library("proteomixr")
 
 #getwd()
 setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse")
 #setwd("C:/Users/PrevBeast/Documents/GitHub/previs")
-data_raw <- read.csv("WT vs KO_pep.csv")
+data_raw <- read.csv("WT vs KO all pep.csv")
 
 # Normalization ----------------------------------------------------------------
 
@@ -131,13 +131,11 @@ log_cols <- grep("log", colnames(data))
 group1_log_cols <- grep("Sample_norm_log", colnames(data))
 ctrl_log_cols <- grep("Control_norm_log", colnames(data))
 
-group1_stack <- data.frame(data[, 3], stack(data[, group1_log_cols]))
-colnames(group1_stack) <- c("Master.Protein.Accessions", "group1_log", "samp")
-
-ctrl_stack <- data.frame(data[, 3], stack(data[, ctrl_log_cols]))
-colnames(ctrl_stack) <- c("Master.Protein.Accessions", "ctrl_log", "ctrl")
-
-stacked <- cbind(group1_stack, ctrl_stack[, 2:3])
+stacked <- data.frame(data[, "Master.Protein.Accessions"], 
+                       stack(data[, group1_log_cols]), 
+                       stack(data[, ctrl_log_cols]))
+colnames(stacked) <- c("Master.Protein.Accessions", "group1_log", "samp", 
+                        "ctrl_log", "ctrl")
 
 p_vals <- pval_ttest(stacked, "group1_log", "ctrl_log")
 p_vals$Master.Protein.Accessions <-
@@ -174,8 +172,8 @@ human_sub_cell$Gene <- capwords(as.character(human_sub_cell$Gene),
                                       strict = TRUE)
 
 # Group genes into subcellular compartments on data
-data$compartment <- gene_to_group(data, human_sub_cell)
-data$sub_compartment <- gene_to_group(data, human_sub_cell, 
+data$compartment <- gene_to_comp(data, human_sub_cell)
+data$sub_compartment <- gene_to_comp(data, human_sub_cell, 
                                       level = "Sub.compartment")
 
 # Condense unique compartments into only one
@@ -200,15 +198,24 @@ weighted_ratio <- cbind(sapply(split(data, data$compartment),
 
 # Statistics for compartments and sub-compartments------------------------------
 
-g1stack <- data.frame(data[, "compartment"], stack(data[, group1_log_cols]))
-colnames(g1stack) <- c("compartment", "group1_log", "samp")
+stack2 <- data.frame(data[, "compartment"], stack(data[, group1_log_cols]),
+                     stack(data[, ctrl_log_cols]))
+colnames(stack2) <- c("compartment", "group1_log", "samp", "ctrl_log", "ctrl")
 
-ctrlstack <- data.frame(data[, "compartment"], stack(data[, ctrl_log_cols]))
-colnames(ctrlstack) <- c("compartment", "ctrl_log", "ctrl")
+pval_ttest2 <- function (dat, group, ctrl, col = "Master.Protein.Accessions"){
+  name <- NULL
+  p_value <- NULL
+  for (pro in unique(dat[, col])) {
+    temp <- dplyr::filter(dat, dat[, col] == pro)
+    pval_temp <- t.test(temp[, group], temp[, ctrl])$p.value
+    name <- c(name, pro)
+    p_value <- c(p_value, pval_temp)
+  }
+  return(as.data.frame(cbind(name, p_value)))
+}
 
-stack2 <- cbind(g1stack, ctrlstack[, 2:3])
+p_val2 <- pval_ttest2(stack2, "group1_log", "ctrl_log", col = "compartment")
 
-p_val2 <- pval_ttest(stack2, "group1_log", "ctrl_log")
 
 
 
