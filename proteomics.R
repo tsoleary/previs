@@ -134,6 +134,7 @@ ctrl_log_cols <- grep("Control_norm_log", colnames(data))
 stacked <- data.frame(data[, "Master.Protein.Accessions"], 
                        stack(data[, group1_log_cols]), 
                        stack(data[, ctrl_log_cols]))
+
 colnames(stacked) <- c("Master.Protein.Accessions", "group1_log", "samp", 
                         "ctrl_log", "ctrl")
 
@@ -165,20 +166,48 @@ sub_cell_comp <- subset(sub_cell_comp, !duplicated(sub_cell_comp$Gene))
 # Group genes into subcellular compartments on data
 data$compartment <- gene_to_comp(data, sub_cell_comp,
                                  level = "compartment")
-data$sub_compartment <- gene_to_comp(data, sub_cell_comp, 
-                                      level = "sub_compartment")
+
+# data$sub_compartment <- gene_to_comp(data, sub_cell_comp, 
+#                                      level = "sub_compartment")
+
+# There is some sort of bug in the gene_to_comp function that results in this:
+# > data$compartment[1]
+# [1] "MitochondriaMMitochondriaiMitochondriatMitochondriaoMitochondriac
+# MitochondriahMitochondriaoMitochondrianMitochondriadMitochondriarMitochondriai
+# MitochondriaaMitochondria"
+
+gene_to_comp2 <- function (dat, comp_dat, level = "compartment") {
+  dat$comp <- dat$gene
+  for (i in 1:nrow(dat)) {
+    temp <- which(dat$gene[i] == comp_dat$Gene, TRUE)
+    if (length(temp) == 1) {
+      dat$comp <- gsub(dat$comp[i], comp_dat[temp, level], 
+                       dat$comp, ignore.case = TRUE)
+    }
+  }
+  return(dat$comp)
+}
+
+data$compartment <- gene_to_comp(data, sub_cell_comp,
+                                 level = "compartment")
+
+
+
+
+################################################################################
 
 # Condense unique compartments into only one
 compart_list <- as.character(unique(sub_cell_comp$compartment))
 
 comp_simp <- data$compartment
 list <- NULL
+temp <- NULL
 for (pro in compart_list) {
   for (i in 1:nrow(data)){
     if (str_detect(comp_simp[i], pro) == TRUE){
       temp <- str_extract(comp_simp[i], pro)
     } else {
-    comp_simp[i] <- temp
+    comp_simp[i] <- comp_simp[i]
     }
   }
 }
