@@ -164,8 +164,8 @@ sub_cell_comp <- read.csv("sub_cell_comp_mouse.csv")
 sub_cell_comp <- subset(sub_cell_comp, !duplicated(sub_cell_comp$Gene))
 
 # Group genes into subcellular compartments on data
-data$compartment <- gene_to_comp(data, sub_cell_comp,
-                                 level = "compartment")
+data$compartment <- gene_to_comp2(data, sub_cell_comp,
+                                  level = "compartment")
 
 # data$sub_compartment <- gene_to_comp(data, sub_cell_comp, 
 #                                      level = "sub_compartment")
@@ -181,12 +181,18 @@ gene_to_comp2 <- function (dat, comp_dat, level = "compartment") {
   for (i in 1:nrow(dat)) {
     temp <- which(dat$gene[i] == comp_dat$Gene, TRUE)
     if (length(temp) == 1) {
-      dat$comp <- gsub(dat$comp[i], comp_dat[temp, level], 
-                       dat$comp, ignore.case = TRUE)
+      dat$comp[i] <- gsub(dat$comp[i], comp_dat[temp, level], 
+                          dat$comp, ignore.case = TRUE)
     }
   }
   return(dat$comp)
 }
+
+# test code below
+
+data$comp <- data$gene
+which(data$gene[1] == sub_cell_comp$Gene, TRUE)
+
 
 data$compartment <- gene_to_comp(data, sub_cell_comp,
                                  level = "compartment")
