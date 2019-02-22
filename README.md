@@ -2,10 +2,5 @@
 Proteomics
 label-free quantitative proteomics
 
-This is a line from R studio
-
-more edits 
-
-test
-
-
+Workflow made for relative abundance calculations of the proteomic data exported from 
+Proteome Discoverer 2.2 in the Previs Lab
