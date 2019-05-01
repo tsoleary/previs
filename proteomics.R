@@ -1,24 +1,22 @@
 # Proteomic analysis: Data imported from Proteome Discoverer 2.2 ---------------
 
-library(tidyverse)
+library("tidyverse")
+library("devtools")
 
+# if proteomixr has been updated on github
+remove.packages("proteomixr") # remove old proteomixr
+install_github("tsoleary/proteomixr") # to get latest version
+library("proteomixr")
+
+#getwd()
 setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse")
-data_raw <- read.csv("WT vs KO_pep.csv")
+#setwd("C:/Users/PrevBeast/Documents/GitHub/previs")
+data_raw <- read.csv("WT vs KO all pep.csv")
 
 # Normalization ----------------------------------------------------------------
 
-# Function applied to each peptide for a group of data with median as default
-as_group <- function (dat, col, FUN = median){
-  list <- NULL
-  for (i in 1:nrow(dat)){
-    temp <- FUN(as.numeric(dat[i, col], na.rm = TRUE))
-    list <- c(list, temp)
-  }
-  return(list)
-}
-
 ctrl_raw <- grep("Control", colnames(data_raw))
-data_raw$ctrl_raw_med <- as_group(data_raw, ctrl_raw)
+data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
 # set the max number of peptides used in analysis
 max_pep <- 15
@@ -49,39 +47,32 @@ data <- cbind(data, norm_test)
 group1 <- grep("Sample_norm", colnames(data))
 ctrl <- grep("Control_norm", colnames(data))
 
-data$group1_med <- as_group(data, group1)
-data$ctrl_med <- as_group(data, ctrl)
+data$group1_med <- by_group(data, group1)
+data$ctrl_med <- by_group(data, ctrl)
 
 # Standard deviation between samples for each peptide
-data$group1_sd <- as_group(data, group1, FUN = sd)
-data$ctrl_sd <- as_group(data, ctrl, FUN = sd)
+data$group1_sd <- by_group(data, group1, FUN = sd)
+data$ctrl_sd <- by_group(data, ctrl, FUN = sd)
 
 # Relative abundance ratio for each peptide
-ratio <- data$group1_med / data$ctrl_med
-data$ratio <- ratio
-
-# Function to count degrees of freedom in a group, defaults witout duplicates
-count_df <- function (dat, col, dup = 1){
-  list <- NULL
-  for (i in 1:nrow(dat)){
-    temp <- length(which(!is.na(dat[i, col])))
-    temp <- temp / dup
-    if(temp >= 1){
-      temp <- temp - 1
-    }
-    list <- c(list, temp)
-  }
-  return(list)
-}
+data$ratio <- abun_ratio(data, "group1_med")
 
 # Degrees of freedom
-data$group1_df <- count_df(data, group1, dup = 3)
-data$ctrl_df <- count_df(data, ctrl, dup = 3)
+data$group1_df <- count_df(data, group1, rep = 3)
+data$ctrl_df <- count_df(data, ctrl, rep = 3)
 
 # Removing rows with NA values for the median
 data <- data[!(is.na(data$ratio)), ]
 
-# Data frame with only top few ionizing peptides
+# Remove outliers --------------------------------------------------------------
+
+pro_out <- by_protein(data, "ratio") %>% as.data.frame %>%
+  rownames_to_column("Master.Protein.Accessions")
+
+data <- rm_outliers(data, pro_out, "ratio")
+
+# Data frame with only top few ionizing peptides -------------------------------
+
 pep_top <- 3
 data_top <-
   tbl_df(data) %>%
@@ -91,23 +82,9 @@ data_top <-
 
 # Protein Averages -------------------------------------------------------------
 
-# Relative abundance of each protein using top ionizers
-protein_group <- function (dat, groups, FUN = mean){
-  tab <- NULL
-  for (col in groups){
-    temp <- tapply(dat[, col],
-                   dat$Master.Protein.Accessions,
-                   FUN,
-                   na.rm = TRUE)
-    tab <- cbind(tab, temp)
-  }
-  colnames(tab) <- groups
-  return(tab)
-}
-
 group_names <- c("group1_med", "ctrl_med")
 
-protein <- protein_group(data_top, group_names) %>%
+protein <- by_protein(data_top, group_names) %>%
   as.data.frame %>%
   rownames_to_column("Master.Protein.Accessions")
 
@@ -115,39 +92,20 @@ protein$Master.Protein.Accessions <-
   protein$Master.Protein.Accessions %>%
   as.character
 
-# Standard deviation of grouped relative abundance using top ionizers
-square_x_df <- function (dat, group_sd, group_df){
-  (dat[, group_sd])^2 * (dat[, group_df])
-}
-
 data_top$group1_sd_df <- square_x_df(data_top, "group1_sd", "group1_df")
 data_top$ctrl_sd_df <- square_x_df(data_top, "ctrl_sd", "ctrl_df")
 
 # Creating a temp data frame to calculate the ratio sd
-
-temp_df <- NULL # initialize data frame
+temp_df <- NULL 
 sd_sum <- c("group1_sd_df", "ctrl_sd_df", "group1_df", "ctrl_df")
-temp_df <- protein_group(data_top, sd_sum, FUN = sum)
-temp_df <- as.data.frame(temp_df)
+temp_df <- by_protein(data_top, sd_sum, FUN = sum) %>% as.data.frame
 
 group1_pooled_sd <- temp_df$group1_sd_df / temp_df$group1_df
 ctrl_pooled_sd <- temp_df$ctrl_sd_df / temp_df$ctrl_df
 protein <- cbind(protein, group1_pooled_sd, ctrl_pooled_sd)
 
 # Grouped relative protein abundance ratio
-protein$ratio <- protein_group(data, "ratio")
-
-# Taylor Expansion to get the sd of the ratio of two means
-ratio_sd <- function (dat, ratio, group1_sd, group1_med, ctrl_sd, ctrl_med){
-  ratio_sd_pep <- NULL
-  for (i in 1:nrow(dat)){
-    temp1 <- (dat[i, group1_sd] / dat[i, group1_med])^2
-    temp2 <- (dat[i, ctrl_sd] / dat[i, ctrl_med])^2
-    result <- dat[i, ratio] * sqrt(temp1 + temp2)
-    ratio_sd_pep <- c(ratio_sd_pep, result)
-  }
-  return(ratio_sd_pep)
-}
+protein$ratio <- by_protein(data, "ratio") %>% as.numeric
 
 # Standard deviation relative protein abundance ratio
 data$ratio_sd <- ratio_sd(data, "ratio", "group1_sd", "group1_med", 
@@ -155,28 +113,16 @@ data$ratio_sd <- ratio_sd(data, "ratio", "group1_sd", "group1_med",
 
 # Standard deviation grouped relative protein abundance ratio
 data$ratio_df <- data$group1_df + data$ctrl_df
-data$ratio_sd_df <- (data$ratio_sd_pep)^2 * data$ratio_df
+data$ratio_sd_df <- square_x_df(data, "ratio_sd", "ratio_df")
 
-temp_df <- NULL
+sd_calc <- c("ratio_df", "ratio_sd_df")
+temp_df <- by_protein(data, sd_calc, FUN = sum) %>% as.data.frame
 
-ratio_df_sum <- tapply(data$ratio_df,
-                       data$Master.Protein.Accessions,
-                       sum,
-                       na.rm = TRUE)
-
-ratio_sd_df_sum <- tapply(data$ratio_sd_df,
-                       data$Master.Protein.Accessions,
-                       sum,
-                       na.rm = TRUE)
-
-temp_df <- cbind(ratio_df_sum, ratio_sd_df_sum)
-temp_df <- as.data.frame(temp_df)
-ratio_sd <- temp_df$ratio_sd_df_sum / temp_df$ratio_df_sum
-
-protein_table <- cbind(protein_table, ratio_sd)
-colnames(protein_table) <- c(pro_med, sd_calc, pro_data, "ratio_sd")
+ratio_sd <- temp_df$ratio_sd_df / temp_df$ratio_df
+protein <- cbind(protein, ratio_sd)
 
 # Statistics -------------------------------------------------------------------
+
 log_norm <- log(data[, c(group1, ctrl)])
 colnames(log_norm) <- paste(colnames(log_norm), sep = "_", "log")
 data <- cbind(data, log_norm)
@@ -185,60 +131,107 @@ log_cols <- grep("log", colnames(data))
 group1_log_cols <- grep("Sample_norm_log", colnames(data))
 ctrl_log_cols <- grep("Control_norm_log", colnames(data))
 
-group1_stack <- data.frame(data[, 3], stack(data[, group1_log_cols]))
-colnames(group1_stack) <- c("Master.Protein.Accessions", "group1_log", "samp")
+stacked <- data.frame(data[, "Master.Protein.Accessions"], 
+                       stack(data[, group1_log_cols]), 
+                       stack(data[, ctrl_log_cols]))
 
-ctrl_stack <- data.frame(data[, 3], stack(data[, ctrl_log_cols]))
-colnames(ctrl_stack) <- c("Master.Protein.Accessions", "ctrl_log", "ctrl")
+colnames(stacked) <- c("Master.Protein.Accessions", "group1_log", "samp", 
+                        "ctrl_log", "ctrl")
 
+p_vals <- pval_ttest(stacked, "group1_log", "ctrl_log")
+colnames(p_vals)[1] <- "Master.Protein.Accessions"
 
-stacked <- cbind(group1_stack, ctrl_stack[, 2:3])
+p_vals$Master.Protein.Accessions <-
+  p_vals$Master.Protein.Accessions %>% 
+    as.character
 
-protein <- NULL
-p_vals <- NULL
-for (pro in unique(stacked$Master.Protein.Accessions)){
-  temp <- filter(stacked, stacked$Master.Protein.Accessions == pro)
-  p_val_temp <- t.test(temp$group1_log, temp$ctrl_log)$p.value
-  protein <- c(protein, pro)
-  p_vals <- c(p_vals, p_val_temp)
-}
+protein <- full_join(protein, p_vals, by = "Master.Protein.Accessions")
 
-pro_pvals <- as.data.frame(cbind(protein, p_vals))
-colnames(pro_pvals) <- c("Master.Protein.Accessions", "p-value")
-
-protein_df <- as.data.frame(protein_table)
-
-protein_df <- full_join(protein_df, pro_pvals, by = "Master.Protein.Accessions")
-# Warning - joining character vector and factor
-protein_df$Master.Protein.Accessions <-
-  as.factor(protein_df$Master.Protein.Accessions)
-
-# Minimum number of peptides for each protein group
-
-min_pep <- 5 
-protein_df$peptides <- table(data$Master.Protein.Accessions)
-protein_min <- filter(protein_df, protein_df$peptides >= min_pep)
-
-# Converting Protein Accession to Gene Symbol ----------------------------------
+# Converting protein accession to gene symbol ----------------------------------
 gene_df <- read.csv('mouse_PD_accession_gene.csv')
 
-mpa_to_gene <- function (dat, gene_dat){
-  dat$gene <- dat$Master.Protein.Accessions
-  for (i in 1:nrow(dat)){
-    temp <- which(dat$gene[i] == gene_dat$Accession, TRUE)
-    if (length(temp) == 1){
-      dat$gene <- gsub(dat$gene[i], gene_dat$Gen[temp], dat$gene)
+data$gene <- mpa_to_gene(data, gene_df)
+protein$gene <- mpa_to_gene(protein, gene_df)
+
+# Minimum number of peptides for each protein group ----------------------------
+min_pep <- 5 
+protein$peptides <- table(data$Master.Protein.Accessions)
+protein <- filter(protein, protein$peptides >= min_pep)
+
+# Group by sub-cellular compartment --------------------------------------------
+
+sub_cell_comp <- read.csv("sub_cell_comp_mouse.csv")
+sub_cell_comp <- subset(sub_cell_comp, !duplicated(sub_cell_comp$Gene))
+
+# Group genes into subcellular compartments on data
+data$compartment <- gene_to_comp2(data, sub_cell_comp,
+                                  level = "compartment")
+
+# data$sub_compartment <- gene_to_comp(data, sub_cell_comp, 
+#                                      level = "sub_compartment")
+
+# There is some sort of bug in the gene_to_comp function that results in this:
+# > data$compartment[1]
+# [1] "MitochondriaMMitochondriaiMitochondriatMitochondriaoMitochondriac
+# MitochondriahMitochondriaoMitochondrianMitochondriadMitochondriarMitochondriai
+# MitochondriaaMitochondria"
+
+gene_to_comp2 <- function (dat, comp_dat, level = "compartment") {
+  dat$comp <- dat$gene
+  for (i in 1:nrow(dat)) {
+    temp <- which(dat$gene[i] == comp_dat$Gene, TRUE)
+    if (length(temp) == 1) {
+      dat$comp[i] <- gsub(dat$comp[i], comp_dat[temp, level], 
+                          dat$comp, ignore.case = TRUE)
     }
   }
-  return(dat$gene)
+  return(dat$comp)
 }
 
-data$gene <- mpa_to_gene(data, gene_df)
-protein_df$gene <- mpa_to_gene(protein_df, gene_df)
+# test code below
 
-# Remove outliers --------------------------------------------------------------
+data$comp <- data$gene
+which(data$gene[1] == sub_cell_comp$Gene, TRUE)
 
-# Removing rows with NA values for the median
-data <- data[!(...), ]
 
-#home
+data$compartment <- gene_to_comp(data, sub_cell_comp,
+                                 level = "compartment")
+
+
+
+
+################################################################################
+
+# Condense unique compartments into only one
+compart_list <- as.character(unique(sub_cell_comp$compartment))
+
+comp_simp <- data$compartment
+list <- NULL
+temp <- NULL
+for (pro in compart_list) {
+  for (i in 1:nrow(data)){
+    if (str_detect(comp_simp[i], pro) == TRUE){
+      temp <- str_extract(comp_simp[i], pro)
+    } else {
+    comp_simp[i] <- comp_simp[i]
+    }
+  }
+}
+
+data$compartment <- comp_simp
+
+# Compartments ratio average
+weighted_ratio <- cbind(sapply(split(data, data$compartment), 
+                        function (x) {weighted.mean(x$ratio, x$group1_med)}))
+
+# Statistics for compartments and sub-compartments------------------------------
+
+stack2 <- data.frame(data[, "compartment"], stack(data[, group1_log_cols]),
+                     stack(data[, ctrl_log_cols]))
+colnames(stack2) <- c("compartment", "group1_log", "samp", "ctrl_log", "ctrl")
+
+p_val2 <- pval_ttest(stack2, "group1_log", "ctrl_log", col = "compartment")
+colnames(p_val2)[1] <- "compartment"
+
+
+
