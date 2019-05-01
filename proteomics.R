@@ -9,14 +9,23 @@ install_github("tsoleary/proteomixr") # to get latest version
 library("proteomixr")
 
 #getwd()
-setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse")
-#setwd("C:/Users/PrevBeast/Documents/GitHub/previs")
-data_raw <- read.csv("WT vs KO all pep.csv")
+setwd("C:/Users/PrevBeast/Documents/R/Meyer")
+data_raw <- read.csv("meyer_all_peptides.csv")
 
 # Normalization ----------------------------------------------------------------
 
 ctrl_raw <- grep("Control", colnames(data_raw))
-data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
+
+by_group2 <- function (dat, col, FUN = median) {
+  list <- NULL
+  for (i in 1:nrow(dat)) {
+    temp <- FUN(as.numeric(dat[i, col]), na.rm = TRUE)
+    list <- c(list, temp)
+  }
+  return(list)
+}
+
+data_raw$ctrl_raw_med <- by_group2(data_raw, ctrl_raw)
 
 # set the max number of peptides used in analysis
 max_pep <- 15
