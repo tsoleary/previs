@@ -205,26 +205,12 @@ log_cols <- grep("log", colnames(data))
 group1_log_cols <- grep("HFpEF_norm_log", colnames(data))
 ctrl_log_cols <- grep("Control_norm_log", colnames(data))
 
-#Problem when there is a different number of samples between the two groups
-#try making two separate data frames and then merging
-
-
-
-stack_group1 <- data.frame(data[, "Master.Protein.Accessions"], 
-                       stack(data[, group1_log_cols]))
-
-stack_ctrl <- data.frame(data[, "Master.Protein.Accessions"], 
-                           stack(data[, ctrl_log_cols]))
-
-cbind(stack_group1, stack_ctrl)
-
-#an inelegant solution would be to add dummy columns to the group with less 
-#samples with nothing but NA's in them
+# Problem if different number of samples be in each group ----------------------
 
 length(group1_log_cols)
-
 length(ctrl_log_cols)
 
+#add two cols to HFpEF samples
 data$dummy1_HFpEF_norm_log <- NA
 data$dummy2_HFpEF_norm_log <- NA
 
@@ -263,7 +249,18 @@ p_vals$Master.Protein.Accessions <-
 protein <- full_join(protein, p_vals, by = "Master.Protein.Accessions")
 
 # Converting protein accession to gene symbol ----------------------------------
-gene_df <- read.csv('mouse_PD_accession_gene.csv')
+gene_df <- read.csv('meyer_protein_accession_gene_list.csv')
+
+mpa_to_gene <- function (dat, gene_dat){
+  dat$gene <- dat$Master.Protein.Accessions
+  for (i in 1:nrow(dat)){
+    temp <- which(dat$gene[i] == gene_dat$Accession, TRUE)
+    if (length(temp) == 1){
+      dat$gene <- gsub(dat$gene[i], gene_dat$Gene[temp], dat$gene)
+    }
+  }
+  return(dat$gene)
+}
 
 data$gene <- mpa_to_gene(data, gene_df)
 protein$gene <- mpa_to_gene(protein, gene_df)
