@@ -1,9 +1,9 @@
 # Proteomic analysis: Data imported from Proteome Discoverer 2.2 ---------------
 
 library("tidyverse")
-library("devtools")
 
 # if proteomixr has been updated on github
+#library("devtools")
 #remove.packages("proteomixr") # remove old proteomixr
 #install_github("tsoleary/proteomixr") # to get latest version
 #library("proteomixr")
@@ -145,6 +145,42 @@ rm_outliers <- function (dat, pro_df, ratio, mult = 2){
 
 data <- rm_outliers(data, pro_out, "ratio")
 
+# Trying to create a function that will remove peptides with high sd_ratio
+
+rm_outliers2 <- function (dat, pro_df, ratio, mult = 2){
+  
+  sd_ratio_temp_df <- by_protein(dat, ratio, FUN = sd) %>%
+    as.data.frame %>%
+    rownames_to_column("Master.Protein.Accessions") %>%
+    'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
+  
+  pro_temp <- dplyr::full_join(pro_df, sd_ratio_temp_df,
+                               by = "Master.Protein.Accessions")
+  
+  pro_temp$max_ratio <- pro_temp$ratio + mult * pro_temp$sd_ratio
+  pro_temp$min_ratio <- pro_temp$ratio - mult * pro_temp$sd_ratio
+  
+  data_rm_out <- NULL
+  
+  for (pro in unique(dat$Master.Protein.Accessions)){
+    temp <- dplyr::filter(dat, dat$Master.Protein.Accessions == pro)
+    
+    rm_high <- which(temp$ratio > pro_temp$max_ratio[which(
+      pro_temp$Master.Protein.Accessions == pro)])
+    
+    rm <- c(rm_high)
+    if (length(rm) > 0){
+      temp_rm <- temp[-rm, ]
+      data_rm_out <- dplyr::bind_rows(data_rm_out, temp_rm)
+    } else {
+      data_rm_out <- dplyr::bind_rows(data_rm_out, temp)
+    }
+  }
+  return(data_rm_out)
+}
+
+data <- rm_outliers2(data, pro_out, "ratio_sd")
+
 # Data frame with only top few ionizing peptides -------------------------------
 
 pep_top <- 3
@@ -269,81 +305,3 @@ protein$gene <- mpa_to_gene(protein, gene_df)
 min_pep <- 5 
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
-
-# Group by sub-cellular compartment --------------------------------------------
-
-sub_cell_comp <- read.csv("sub_cell_comp_mouse.csv")
-sub_cell_comp <- subset(sub_cell_comp, !duplicated(sub_cell_comp$Gene))
-
-# Group genes into subcellular compartments on data
-data$compartment <- gene_to_comp2(data, sub_cell_comp,
-                                  level = "compartment")
-
-# data$sub_compartment <- gene_to_comp(data, sub_cell_comp, 
-#                                      level = "sub_compartment")
-
-# There is some sort of bug in the gene_to_comp function that results in this:
-# > data$compartment[1]
-# [1] "MitochondriaMMitochondriaiMitochondriatMitochondriaoMitochondriac
-# MitochondriahMitochondriaoMitochondrianMitochondriadMitochondriarMitochondriai
-# MitochondriaaMitochondria"
-
-gene_to_comp2 <- function (dat, comp_dat, level = "compartment") {
-  dat$comp <- dat$gene
-  for (i in 1:nrow(dat)) {
-    temp <- which(dat$gene[i] == comp_dat$Gene, TRUE)
-    if (length(temp) == 1) {
-      dat$comp[i] <- gsub(dat$comp[i], comp_dat[temp, level], 
-                          dat$comp, ignore.case = TRUE)
-    }
-  }
-  return(dat$comp)
-}
-
-# test code below
-
-data$comp <- data$gene
-which(data$gene[1] == sub_cell_comp$Gene, TRUE)
-
-
-data$compartment <- gene_to_comp(data, sub_cell_comp,
-                                 level = "compartment")
-
-
-
-
-################################################################################
-
-# Condense unique compartments into only one
-compart_list <- as.character(unique(sub_cell_comp$compartment))
-
-comp_simp <- data$compartment
-list <- NULL
-temp <- NULL
-for (pro in compart_list) {
-  for (i in 1:nrow(data)){
-    if (str_detect(comp_simp[i], pro) == TRUE){
-      temp <- str_extract(comp_simp[i], pro)
-    } else {
-    comp_simp[i] <- comp_simp[i]
-    }
-  }
-}
-
-data$compartment <- comp_simp
-
-# Compartments ratio average
-weighted_ratio <- cbind(sapply(split(data, data$compartment), 
-                        function (x) {weighted.mean(x$ratio, x$group1_med)}))
-
-# Statistics for compartments and sub-compartments------------------------------
-
-stack2 <- data.frame(data[, "compartment"], stack(data[, group1_log_cols]),
-                     stack(data[, ctrl_log_cols]))
-colnames(stack2) <- c("compartment", "group1_log", "samp", "ctrl_log", "ctrl")
-
-p_val2 <- pval_ttest(stack2, "group1_log", "ctrl_log", col = "compartment")
-colnames(p_val2)[1] <- "compartment"
-
-
-
