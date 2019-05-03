@@ -1,8 +1,10 @@
 # Model of synthesis and degredation in the model ------------------------------
 
-# First I need to make a data frame with the pinpoint values
+time_final <- 120
+initial <- 1000
 
-for (i in 0:120){
- 
-}
+
+time <- c(0:time_final)
+
+initial 
 
