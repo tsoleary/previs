@@ -18,4 +18,17 @@ df2 <- df %>%
 
 df3 <- separate(df2, "sample", c("sample", "duplicate", "time"), sep = "_")
 
-# 
+# Correct M_0 and M_3 ----------------------------------------------------------
+
+df4 <- df3 %>%
+         group_by(protein, type, peptide, sample, time) %>%
+         summarize(abundance = mean(abundance))
+
+df5 <- filter(df4, type == "Sum")
+
+
+#okay so the next things that I want to do are graph the sums over time
+
+# so I need to convert the times from T0 T2 to 0 hours, 12 hours etc....
+
+
