@@ -4,31 +4,29 @@ library(tidyverse)
 
 # Tidy the data ----------------------------------------------------------------
 
-getwd()
 setwd("C:/Users/PrevBeast/Documents/R/Helms")
 list.files()
 
 df <- read.csv("reprex.csv")
 
-samples <- c("DF_A_T0", "DF_A_T2", "DF_B_T0", "DF_B_T2", 
-             "L2_A_T0", "L2_A_T2", "L2_B_T0", "L2_B_T2")
+samples <- colnames(df)[4:length(colnames(df))]
 
 df2 <- df %>% 
-  gather(sample, abundance, samples, na.rm = TRUE)
-
-df3 <- separate(df2, "sample", c("sample", "duplicate", "time"), sep = "_")
+  gather(sample, abundance, samples, na.rm = TRUE) %>%
+  separate("sample", c("sample", "duplicate", "time"), sep = "_")
 
 # Correct M_0 and M_3 ----------------------------------------------------------
 
-df4 <- df3 %>%
-         group_by(protein, type, peptide, sample, time) %>%
-         summarize(abundance = mean(abundance))
+df_dup_avg <- df3 %>%
+                group_by(protein, type, peptide, sample, time) %>%
+                summarize(abundance = mean(abundance))
 
-df5 <- filter(df4, type == "Sum")
+df5 <- filter(df_dup_avg, type == "Sum")
 
+# Graph using ggplot2 ----------------------------------------------------------
 
-#okay so the next things that I want to do are graph the sums over time
+ggplot(data = df5) +
+  geom_point(mapping = aes(x = time, y = abundance, color = sample))
 
-# so I need to convert the times from T0 T2 to 0 hours, 12 hours etc....
 
 
