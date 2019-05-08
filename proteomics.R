@@ -28,7 +28,7 @@ by_group <- function (dat, col, FUN = median) {
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
 # set the max number of peptides used in analysis
-max_pep <- 5
+max_pep <- 15
 
 data <-
   tbl_df(data_raw) %>%
@@ -36,7 +36,10 @@ data <-
   top_n(n = max_pep, wt = ctrl_raw_med)
 
 # proteins used for normalization
-norm_pro <- "P12883; P13533"
+myosin <- "P12883; P13533"
+histones <- "B4DR52; P06899"
+
+norm_pro <- histones
 
 norm_pep <- subset(data, data$Master.Protein.Accessions == norm_pro)
 numeric_cols <- which(sapply(norm_pep, is.numeric) == TRUE)
@@ -166,6 +169,10 @@ protein$Master.Protein.Accessions <-
   protein$Master.Protein.Accessions %>%
   as.character
 
+square_x_df <- function (dat, group_sd, group_df){
+  (dat[, group_sd])^2 * (dat[, group_df])
+}
+
 data_top$group1_sd_df <- square_x_df(data_top, "group1_sd", "group1_df")
 data_top$ctrl_sd_df <- square_x_df(data_top, "ctrl_sd", "ctrl_df")
 
@@ -182,6 +189,17 @@ protein <- cbind(protein, group1_pooled_sd, ctrl_pooled_sd)
 protein$ratio <- by_protein(data, "ratio") %>% as.numeric
 
 # Standard deviation relative protein abundance ratio
+ratio_sd <- function (dat, ratio, group1_sd, group1_med, ctrl_sd, ctrl_med){
+  ratio_sd_pep <- NULL
+  for (i in 1:nrow(dat)){
+    temp1 <- (dat[i, group1_sd] / dat[i, group1_med])^2
+    temp2 <- (dat[i, ctrl_sd] / dat[i, ctrl_med])^2
+    result <- dat[i, ratio] * sqrt(temp1 + temp2)
+    ratio_sd_pep <- c(ratio_sd_pep, result)
+  }
+  return(ratio_sd_pep)
+}
+
 data$ratio_sd <- ratio_sd(data, "ratio", "group1_sd", "group1_med", 
                              "ctrl_sd", "ctrl_med")
 
@@ -270,4 +288,4 @@ min_pep <- 5
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-write.csv(protein, "meyer_HFpEF_top_5.csv")
+write.csv(protein, "meyer_HFpEF_hist_norm.csv")
