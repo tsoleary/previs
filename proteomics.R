@@ -1,8 +1,8 @@
 # Proteomic analysis: Data imported from Proteome Discoverer 2.2 ---------------
 
-library("tidyverse")
+library(tidyverse)
 
-# if proteomixr has been updated on github
+#if proteomixr has been updated on github
 #library("devtools")
 #remove.packages("proteomixr") # remove old proteomixr
 #install_github("tsoleary/proteomixr") # to get latest version
