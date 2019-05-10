@@ -149,6 +149,32 @@ rm_outliers <- function (dat, pro_df, ratio, mult = 2){
 
 data <- rm_outliers(data, pro_out, "ratio")
 
+# Oxidized peptides Only -------------------------------------------------------
+
+# data_ox <- filter(data, grepl("Oxid", Modifications))
+# data <- data_ox
+
+# Collagen peptides without oxidation ------------------------------------------
+
+# Converting protein accession to gene symbol
+# gene_df <- read.csv('meyer_protein_accession_gene_list.csv')
+# 
+# mpa_to_gene <- function (dat, gene_dat){
+#   dat$gene <- dat$Master.Protein.Accessions
+#   for (i in 1:nrow(dat)){
+#     temp <- which(dat$gene[i] == gene_dat$Accession, TRUE)
+#     if (length(temp) == 1){
+#       dat$gene <- gsub(dat$gene[i], gene_dat$Gene[temp], dat$gene)
+#     }
+#   }
+#   return(dat$gene)
+# }
+# 
+# data$gene <- mpa_to_gene(data, gene_df)
+# 
+# data_col <- filter(data, grepl("COL", gene))
+# data <- filter(data_col, !grepl("Oxid", Modifications))
+
 # Data frame with only top few ionizing peptides -------------------------------
 
 pep_top <- 3
@@ -289,11 +315,4 @@ min_pep <- 5
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-write.csv(protein, "meyer_HFpEF_hist_norm.csv")
-
-# Question about hydroxylated peptides in collagen increasing ------------------
-
-# Filter only peptides that are modified to be hydroxylated
-
-
-
+write.csv(protein, "meyer_HFpEF_hist_norm_col_non_ox_pep.csv")
