@@ -148,136 +148,20 @@ rm_outliers <- function (dat, pro_df, ratio, mult = 2){
   return(data_rm_out)
 }
 
-# Remove outlier without function #######ratio 1################################
-
-pro_out1 <- by_protein(data, "ratio1") %>% as.data.frame %>%
-  rownames_to_column("Master.Protein.Accessions")
-
-sd_ratio_temp_df <- by_protein(data, "ratio1", FUN = sd) %>%
-  as.data.frame %>%
-  rownames_to_column("Master.Protein.Accessions") %>%
-  'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
-
-pro_temp <- dplyr::full_join(pro_out1, sd_ratio_temp_df,
-                             by = "Master.Protein.Accessions")
-
-pro_temp$max_ratio <- pro_temp$ratio1 + 2 * pro_temp$sd_ratios
-pro_temp$min_ratio <- pro_temp$ratio1 - 2 * pro_temp$sd_ratios
-
-data_rm_out <- NULL
-
-for (pro in unique(data$Master.Protein.Accessions)){
-  temp <- dplyr::filter(data, data$Master.Protein.Accessions == pro)
-  
-  rm_high <- which(temp$ratio1 > pro_temp$max_ratio[which(
-    pro_temp$Master.Protein.Accessions == pro)])
-  
-  rm_low <- which(temp$ratio1 < pro_temp$min_ratio[which(
-    pro_temp$Master.Protein.Accessions == pro)])
-  
-  rm <- c(rm_high, rm_low)
-  if (length(rm) > 0){
-    temp_rm <- temp[-rm, ]
-    data_rm_out <- dplyr::bind_rows(data_rm_out, temp_rm)
-  } else {
-    data_rm_out <- dplyr::bind_rows(data_rm_out, temp)
-  }
-}
-
-data <- data_rm_out
-
-################################################################################
-
-# Remove outlier without function #######ratio 2################################
-
-pro_out2 <- by_protein(data, "ratio2") %>% as.data.frame %>%
-  rownames_to_column("Master.Protein.Accessions")
-
-sd_ratio_temp_df <- by_protein(data, "ratio2", FUN = sd) %>%
-  as.data.frame %>%
-  rownames_to_column("Master.Protein.Accessions") %>%
-  'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
-
-pro_temp <- dplyr::full_join(pro_out2, sd_ratio_temp_df,
-                             by = "Master.Protein.Accessions")
-
-pro_temp$max_ratio2 <- pro_temp$ratio2 + 2 * pro_temp$sd_ratios
-pro_temp$min_ratio2 <- pro_temp$ratio2 - 2 * pro_temp$sd_ratios
-
-data_rm_out <- NULL
-
-for (pro in unique(data$Master.Protein.Accessions)){
-  temp <- dplyr::filter(data, data$Master.Protein.Accessions == pro)
-  
-  rm_high <- which(temp$ratio2 > pro_temp$max_ratio[which(
-    pro_temp$Master.Protein.Accessions == pro)])
-  
-  rm_low <- which(temp$ratio2 < pro_temp$min_ratio[which(
-    pro_temp$Master.Protein.Accessions == pro)])
-  
-  rm <- c(rm_high, rm_low)
-  if (length(rm) > 0){
-    temp_rm <- temp[-rm, ]
-    data_rm_out <- dplyr::bind_rows(data_rm_out, temp_rm)
-  } else {
-    data_rm_out <- dplyr::bind_rows(data_rm_out, temp)
-  }
-}
-
-data <- data_rm_out
-
-################################################################################
-
-# Remove outlier without function #######ratio 3################################
-
-pro_out3 <- by_protein(data, "ratio3") %>% as.data.frame %>%
-  rownames_to_column("Master.Protein.Accessions")
-
-sd_ratio_temp_df <- by_protein(data, "ratio3", FUN = sd) %>%
-  as.data.frame %>%
-  rownames_to_column("Master.Protein.Accessions") %>%
-  'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
-
-pro_temp <- dplyr::full_join(pro_out3, sd_ratio_temp_df,
-                             by = "Master.Protein.Accessions")
-
-pro_temp$max_ratio3 <- pro_temp$ratio3 + 2 * pro_temp$sd_ratios
-pro_temp$min_ratio3 <- pro_temp$ratio3 - 2 * pro_temp$sd_ratios
-
-data_rm_out <- NULL
-
-for (pro in unique(data$Master.Protein.Accessions)){
-  temp <- dplyr::filter(data, data$Master.Protein.Accessions == pro)
-  
-  rm_high <- which(temp$ratio3 > pro_temp$max_ratio[which(
-    pro_temp$Master.Protein.Accessions == pro)])
-  
-  rm_low <- which(temp$ratio3 < pro_temp$min_ratio[which(
-    pro_temp$Master.Protein.Accessions == pro)])
-  
-  rm <- c(rm_high, rm_low)
-  if (length(rm) > 0){
-    temp_rm <- temp[-rm, ]
-    data_rm_out <- dplyr::bind_rows(data_rm_out, temp_rm)
-  } else {
-    data_rm_out <- dplyr::bind_rows(data_rm_out, temp)
-  }
-}
-
-data <- data_rm_out
-
-################################################################################
-
-
-# with the rm_outliers function ################################################
-
 pro_out1 <- by_protein(data, "ratio1") %>% as.data.frame %>%
   rownames_to_column("Master.Protein.Accessions")
 
 data <- rm_outliers(data, pro_out1, "ratio1")
 
-# still might not work #########################################################
+pro_out2 <- by_protein(data, "ratio2") %>% as.data.frame %>%
+  rownames_to_column("Master.Protein.Accessions")
 
+data <- rm_outliers(data, pro_out2, "ratio2")
+
+pro_out3 <- by_protein(data, "ratio3") %>% as.data.frame %>%
+  rownames_to_column("Master.Protein.Accessions")
+
+data <- rm_outliers(data, pro_out3, "ratio3")
 
 # Data frame with only top few ionizing peptides -------------------------------
 
@@ -530,4 +414,3 @@ protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
 write.csv(protein, "HCM_DIS_GOL_myo_norm.csv")
-
