@@ -1,7 +1,9 @@
 # Riddler ----------------------------------------------------------------------
 # Due 11:59 pm EST Sunday
-#
-# JOE DIMAGGIO
+
+
+
+# JOE DIMAGGIO -----------------------------------------------------------------
 # Riddler Classic May 5, 2019 JOE DIMAGGIO
 # https://fivethirtyeight.com/features/can-the-riddler-bros-beat-joe-dimaggios-
 # hitting-streak/
@@ -25,25 +27,60 @@
 
 # batting average of the five brothers
 
-ba_b1 <- .200
-ba_b2 <- .250
-ba_b3 <- .300
-ba_b4 <- .350
-ba_b5 <- .400
-ba_cuz <- .500
+ba <- .300
+
+# ba_b1 <- .200
+# ba_b2 <- .250
+# ba_b3 <- .300
+# ba_b4 <- .350
+# ba_b5 <- .400
+# ba_cuz <- .500
 
 # number of years played
 
-y_b <- 20
-y_cuz <- 10
+y <- 20
+
+# y_b <- 20
+# y_cuz <- 10
 
 # number of games per year
 
 g <- 160
 
-# number of plate appearances per game
+# let's look at the totals for fun
+#ignoring the cousing for now
 
 pa_g <- 4
+tot_g <- g * y
+tot_pa <- pa_g * g * y
+tot_hit <- tot_pa * ba
+
+# let's find the probability of not getting a hit in a game 
+
+p_not_hit_g <- (1 - ba) ^ pa_g  
+
+
+
+# so if you are batting .300 then the probabiliy of not getting a hit in a game
+# when you have 4 PA is .2401. 
+
+# so getting at least one hit, NOT(p_not_hit_g)
+
+p__hit_g <- 1 - p_not_hit_g
+
+# then a probability of two games in row
+# I assume that it just multiplies but it may be more complicated
+
+
+
+
+# let's define breaking as at least 57 games with hits in a row
+
+
+# because you cannot break the streak if it starts during the 
+# last 56 games of your carreer. Or does that not matter?
+
+tot_g - 56 * 2 
 
 
 
