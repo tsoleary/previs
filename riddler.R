@@ -25,66 +25,54 @@
 # league after his 10th season when he tests positive for performance enhancers. 
 # What are his chances of beating the streak?
 
-# batting average of the five brothers
 
-ba <- .300
-
-# ba_b1 <- .200
-# ba_b2 <- .250
-# ba_b3 <- .300
-# ba_b4 <- .350
-# ba_b5 <- .400
-# ba_cuz <- .500
+# batting average
+avg <- .300
 
 # number of years played
-
 y <- 20
 
-# y_b <- 20
-# y_cuz <- 10
-
 # number of games per year
-
 g <- 160
 
-# let's look at the totals for fun
-#ignoring the cousing for now
+# length of the streak
+str <- 57
 
+# plate appearances per game
 pa_g <- 4
+
+# total number of games played
 tot_g <- g * y
+
+# total number of plate appearances
 tot_pa <- pa_g * g * y
-tot_hit <- tot_pa * ba
 
-# let's find the probability of not getting a hit in a game 
+# probability of not getting a hit in a game 
+p_no_hit_g <- (1 - avg) ^ pa_g  
 
-p_not_hit_g <- (1 - ba) ^ pa_g  
+# probability of getting at least one hit, is 1 - p_not_hit_g
+p_hit_g <- 1 - p_no_hit_g
 
+# probabilities of getting a hit 57 times in a row
+# p_str <- (p_hit_g) ^ 57
+p_str <- (1 - ((1 - p_hit_g) ^ 57))
 
+# number of opportunities to break the streak over the course of a career
+# (can't break streak last 56 games)
 
-# so if you are batting .300 then the probabiliy of not getting a hit in a game
-# when you have 4 PA is .2401. 
+op_str <- tot_g - 57 + 1
 
-# so getting at least one hit, NOT(p_not_hit_g)
-
-p__hit_g <- 1 - p_not_hit_g
-
-# then a probability of two games in row
-# I assume that it just multiplies but it may be more complicated
-
-
+p_break <- op_str * p_str
 
 
-# let's define breaking as at least 57 games with hits in a row
+# create a function to predict the probabilty 
 
+streak <- function (avg, y = 20, g = 160, pa_g = 4, str = 57) {
+  ((1 - ((1 - avg) ^ pa_g)) ^ str) * (y * g - str + 1)
+}
 
-# because you cannot break the streak if it starts during the 
-# last 56 games of your carreer. Or does that not matter?
-
-tot_g - 56 * 2 
-
-
-
-
+streak(.500)
+# not right
 
 
 # End Riddler May 5, 2019 ------------------------------------------------------

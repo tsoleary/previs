@@ -100,10 +100,10 @@ rm_outliers <- function (dat, pro_df, ratio){
   for (pro in unique(dat$Master.Protein.Accessions)){
     temp <- filter(dat, dat$Master.Protein.Accessions == pro)
     
-    rm_high <- which(temp$ratio > pro_temp$max_ratio[which(
+    rm_high <- which(temp[, ratio] > pro_temp$max_ratio[which(
       pro_temp$Master.Protein.Accessions == pro)])
     
-    rm_low <- which(temp$ratio < pro_temp$min_ratio[which(
+    rm_low <- which(temp[, ratio] < pro_temp$min_ratio[which(
       pro_temp$Master.Protein.Accessions == pro)]) 
     
     rm <- c(rm_high, rm_low)
