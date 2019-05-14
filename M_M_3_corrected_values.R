@@ -46,17 +46,17 @@ for (i in 1:length(pro)){
   
   for (j in loop_vector){
    
-     ggplot(data = temp) +
-       geom_point(mapping = aes(x = hrs, 
-                                y = as.numeric(temp[, colnames(temp)[j]]), 
-                                color = sample)) + 
-       labs(title = pro[i]) +
-       ylab(abundance)
-  
+     g1 <- ggplot(data = temp) +
+             geom_point(mapping = aes(x = hrs, 
+                                      y = as.numeric(temp[, colnames(temp)[j]]), 
+                                      color = sample)) + 
+             labs(title = pro[i]) +
+             ylab("abundance")
+  plot(g1)
   }
   
 }
-
+# pdf(file = paste0(i, ".pdf"))
 
 # Graph using ggplot2 ----------------------------------------------------------
 
