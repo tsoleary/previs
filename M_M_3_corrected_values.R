@@ -9,7 +9,7 @@ library(plotly)
 
 setwd("C:/Users/PrevBeast/Documents/R/Helms")
 
-df_messy <- read.csv("reprex.csv")
+df_messy <- read.csv("pinpoint_m_m_3_for_r.csv")
 
 samples <- colnames(df_messy)[4:length(colnames(df_messy))]
 
@@ -22,6 +22,8 @@ df <- df_messy %>%
 df_avg <- df %>%
   group_by(protein, type, peptide, sample, hrs) %>%
   summarize(abundance = mean(abundance))
+  
+df_avg$hrs <- as.numeric(df_avg$hrs)
 
 # spreads out by "type" M_0, M_3, Sum
 
@@ -40,30 +42,29 @@ for (i in 1:length(pro)){
   
   temp <- filter(df_spread, protein == pro[i])
   
-  loop_vector <- c(grep(c("M_0"), colnames(temp)),
-                   grep(c("M_3"), colnames(temp)),
-                   grep(c("Sum"), colnames(temp)))
+  pep <- as.character(unique(temp$peptide))
   
-  for (j in loop_vector){
-   
-     g1 <- ggplot(data = temp) +
-             geom_point(mapping = aes(x = hrs, 
-                                      y = as.numeric(temp[, colnames(temp)[j]]), 
-                                      color = sample)) + 
-             labs(title = pro[i]) +
-             ylab("abundance")
-  plot(g1)
+  for (pep_x in pep){
+  
+    temp_pep <- filter(temp, peptide == pep_x)
+    
+    cols <- c(grep(c("M_0"), colnames(temp_pep)),
+              grep(c("M_3"), colnames(temp_pep)),
+              grep(c("Sum"), colnames(temp_pep)))
+    
+    for (j in cols){
+     
+      g1 <- ggplot(data = temp_pep) +
+              geom_point(mapping = aes(x = hrs, 
+                                       y = as.numeric(temp_pep[, colnames(temp_pep)[j]]), 
+                                       color = sample)) + 
+              labs(title = paste(pro[i], pep_x, sep = " -- "), 
+                   subtitle = colnames(temp_pep)[j]) +
+              ylab("abundance")
+      plot(g1)
+    }
   }
-  
 }
-# pdf(file = paste0(i, ".pdf"))
-
-# Graph using ggplot2 ----------------------------------------------------------
-
-ggplot(data = df_sum) +
-  geom_point(mapping = aes(x = hrs, y = abundance, color = sample)) +
-  labs(title = "data")
-
 
 # Using plotly package ---------------------------------------------------------
 # http://www.rebeccabarter.com/blog/2017-04-20-interactive/
