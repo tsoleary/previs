@@ -60,8 +60,6 @@ p_hit_g <- 1 - p_no_hit_g
 # successes-in-a-sequence-of-n-bernoulli-trials/23762#23762
 
 # Probability of a run of k successes in a sequence of n Bernoulli trials
-# Ask Question
-# 13
 
 # I'm trying to find the probability of getting 8 trials in a row correct in 
 # a block of 25 trials, you have 8 total blocks (of 25 trials) to get 8 trials 
@@ -74,7 +72,6 @@ p_hit_g <- 1 - p_no_hit_g
 # I multiply 17 possibilities * 8 blocks I get 136, would 1-(1-(1/3)^8)^136 give 
 # me the likelihood of getting 8 in a row correct in this situation or am I 
 # missing something fundamental here?
-#   
 
 # I believe the problem with the argument given is that the events considered 
 # are not independent. For example, consider a single block. If I tell you 
@@ -86,32 +83,32 @@ p_hit_g <- 1 - p_no_hit_g
 
 # r code to simulate this 
 hits8 <- function() {
-  x <- rbinom(26, 1, 1/3)                # 25 Binomial trials
-  x[1] <- 0                              # ... and a 0 to get started with `diff`
-  if(sum(x) >= 8) {                      # Are there at least 8 successes?
-    max(diff(cumsum(x), lag=8)) >= 8     # Are there 8 successes in a row anywhere?
+  x <- rbinom(26, 1, 1/3)             # 25 Binomial trials
+  x[1] <- 0                           # ... and a 0 to get started with `diff`
+  if(sum(x) >= 8) {                   # Are there at least 8 successes?
+    max(diff(cumsum(x), lag=8)) >= 8  # Are there 8 successes in a row anywhere?
   } else {
-    FALSE                                # Not enough successes for 8 in a row
+    FALSE                             # Not enough successes for 8 in a row
   }
 }
-set.seed(17)                             # this is a way to set the random number
-                                         # sequence to be the same for a trial
+set.seed(17)                          # this is a way to set the random number
 mean(replicate(10^5, hits8()))
 
-# r code to simulate batting
-hit <- function() {
-  x <- rbinom(3200, 1, .300)            
-  x[1] <- 0                             
-  if(sum(x) >= 57) {                      
-    # max(diff(cumsum(x), lag=57)) >= 57   https://www.rdocumentation.org/packages/base/versions/3.6.0/topics/diff  
-  } else {
-    FALSE                                
+library (expm)
+heads_in_a_row <- function (flips, p, want) {
+  a <- matrix(0, nrow = (want), ncol = (want))
+  for (i in 1:want){
+    a[i, 1] <- 1 - p
+    a[i - 1, i] <- p
   }
+  a[want, want] <- 1.0
+  b <- a %^% flips
+  return(b[want, 1])
 }
 
-mean(replicate(10^5, hit()))
+heads_in_a_row(flips = 4, p = 1/2, want = 2)
 
-
+heads_in_a_row(flips = 25, p = 1/3, want = 8)
 
 
 # number of opportunities to break the streak over the course of a career
