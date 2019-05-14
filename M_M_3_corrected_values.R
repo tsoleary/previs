@@ -57,7 +57,7 @@ for (i in 1:length(pro)){
       g1 <- ggplot(data = temp_pep) +
               geom_point(mapping = aes(x = hrs, 
                                        y = as.numeric(temp_pep[, colnames(temp_pep)[j]]), 
-                                       color = sample)) + 
+                                       color = sample), size = 3) + 
               labs(title = paste(pro[i], pep_x, sep = " -- "), 
                    subtitle = colnames(temp_pep)[j]) +
               ylab("abundance")
@@ -65,6 +65,17 @@ for (i in 1:length(pro)){
     }
   }
 }
+
+# so now a few things
+
+# 1. work on the aesthetics of the graph (rounder points?)
+# 2. figure out how to fit a one phase decay to the M-0 values -- probably need 
+# to do the corrected M-0 values
+# 3. maybe figure out how to put all three M_0, M_3, and Sum in the same sort of 
+# space
+# 4. plotly interactive too
+# 5. make the rest of it nice
+# 
 
 # Using plotly package ---------------------------------------------------------
 # http://www.rebeccabarter.com/blog/2017-04-20-interactive/
