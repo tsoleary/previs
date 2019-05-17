@@ -101,15 +101,29 @@ for (col in isotopes){
   df[, paste(col, "hist_norm", sep = "_")] <- df[, col] / df$hist_avg
 }
 
-# count the number of leucines in a peptide ------------------------------------
+# percent distribution of each isotope -----------------------------------------
+
+# count number of leucines in a peptide
 df$num_L <- str_count(df$peptide, pattern = "L")
+
+# function to determine the distribution 
+
+p <- .5 # percent labeled leucine in media
+L <- 2  # number of leucines
+i <- 0  # mass isotopermer (M_0 = 0, M_3 = 1, M_6 = )
+
+(factorial(L)/(factorial(L - i))*factorial(i))*(p^i)*(1-p)^(L-i)
 
 # M_0, M_3, M_6 correction -----------------------------------------------------
 
-# M_3 and M_6 correction
-
 # M_0 correction 
 
+for (i in length(unique(hrs))){
+  
+}
+
+
+# M_3 and M_6 correction
 
 
 
