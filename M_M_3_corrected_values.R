@@ -107,12 +107,28 @@ for (col in isotopes){
 df$num_L <- str_count(df$peptide, pattern = "L")
 
 # function to determine the distribution 
+# p <- percent labeled leucine in media
+# L <- number of leucines in peptide
+# mass isotopomer (M_0 = 0, M_3 = 1, M_6 = 2, ...)
+# (factorial(L)/(factorial(L-i)*factorial(i)))*(p^i)*(1-p)^(L-i)
 
-p <- .5 # percent labeled leucine in media
-L <- 2  # number of leucines
-i <- 0  # mass isotopermer (M_0 = 0, M_3 = 1, M_6 = )
 
-(factorial(L)/(factorial(L - i))*factorial(i))*(p^i)*(1-p)^(L-i)
+# calculates the isotopic distribution of 
+iso_dist <- function (pep, p = 0.5){
+  
+  L <- str_count(pep, pattern = "L")
+  isos <- 0:L
+  dis <- NULL
+
+  for (i in isos){
+    temp <- (factorial(L)/(factorial(L-i)*factorial(i)))*(p^i)*(1-p)^(L-i)
+    dis <- c(dis, temp)
+  }
+  return(dis)
+}
+
+iso_dist("SAMPLLLLER")
+
 
 # M_0, M_3, M_6 correction -----------------------------------------------------
 
