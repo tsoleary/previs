@@ -176,27 +176,109 @@ library("Rdisop")
 aa_form <- read.csv("aa_molecular_formula.csv")
 
 L_row <- grep("L", aa_form$letter)
-
-Leu <- as.character(aa_form[L_row, "molecular_formula"])
-
-Leu2 <- getMolecule(Leu, z=1)
-
-getIsotope(Leu, 1)
-getIsotope(Leu2, seq(1,5))
+Leu <- getMolecule(as.character(aa_form[L_row, "molecular_formula"]), z = 1)
+getIsotope(Leu, seq(1,4))
 
 
+# now lets try to turn that into a simple function that does it all
+aa_iso <- function(aa, max_iso = 8){
+  row <- grep(aa, aa_form$letter)
+  mol <- getMolecule(as.character(aa_form[row, "molecular_formula"]), z = 1) 
+  getIsotope(mol, seq(1, max_iso))
+}
+
+aa_iso("L")
+
+# now lets try and make a function for a a simple peptide
+
+pep <- "SLR"
+pep_length <- nchar(pep)
+
+aa_sep <- NULL
+for (i in 1:pep_length){
+  aa <- substr(pep, i, i)
+  aa_sep <- c(aa_sep, aa) 
+}
+
+as.list(strsplit(pep, ""))
+
+for (j in 1:length(aa_sep)){
+  row <- grep(aa_sep[j], aa_form$letter)
+  mol <- as.character(aa_form[row, "molecular_formula"])
+  
+}
+
+row <- grep(aa_sep[1], aa_form$letter)
+mol <- as.character(aa_form[row, "molecular_formula"])
+mols <- paste0(mol, mol)
+paste0(mols)
 
 
+getMolecule(mols)$formula
+
+element <- function(formula){
+  # pattern to match the initial element assumes element starts with an upper 
+  # case and optional lower case followed by zero or more digits.
+  first <- "^([[:upper:]][[:lower:]]?)([0-9]*).*"
+  # inverse of above to remove the initial element
+  last <- "^[[:upper:]][[:lower:]]?[0-9]*(.*)"
+  result <- list()
+  extract <- formula
+  # repeat as long as there is data
+  while ((start <- nchar(extract)) > 0){
+    chem <- sub(first, '\\1 \\2', extract)
+    extract <- sub(last, '\\1', extract)
+    # if the number of characters is the same, then there was an error
+    if (nchar(extract) == start){
+      warning("Invalid formula:", formula)
+      return(NULL)
+      }
+    # append to the list
+    result[[length(result) + 1L]] <- strsplit(chem, ' ')[[1]]
+    }
+  result
+}
 
 
+element_df <- function(formula){
+  # pattern to match the initial element assumes element starts with an upper 
+  # case and optional lower case followed by zero or more digits.
+  first <- "^([[:upper:]][[:lower:]]?)([0-9]*).*"
+  # inverse of above to remove the initial element
+  last <- "^[[:upper:]][[:lower:]]?[0-9]*(.*)"
+  result <- list()
+  extract <- formula
+  # repeat as long as there is data
+  while ((start <- nchar(extract)) > 0){
+    chem <- sub(first, '\\1 \\2', extract)
+    extract <- sub(last, '\\1', extract)
+    # if the number of characters is the same, then there was an error
+    if (nchar(extract) == start){
+      warning("Invalid formula:", formula)
+      return(NULL)
+    }
+    # append to the list
+    result[[length(result) + 1L]] <- strsplit(chem, ' ')[[1]]
+  }
+  result
+}
 
 
+ans <- unlist(element("C5H6O3"))
 
 
+elem <- ans[rep(seq(from = 1, to = length(ans), by = 2), 1)]
+num <- ans[rep(seq(from = 2, to = length(ans), by = 2), 1)]
+
+df <- as.data.frame(cbind(elem, num))
+df$num <- as.numeric(as.character(df$num))
+
+select(df, )
 
 
-
-
+for (i in length(aa_sep)){
+  
+}
 
 
 # Model data frame -------------------------------------------------------------
