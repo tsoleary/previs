@@ -158,7 +158,7 @@ deg_new <- 0.0500
 # data frame 
 time <- 0:168
 
-# nat_iso distribution
+# nat_iso distribution of SAMPLER peptide
 iso <- 0:8
 m_z <- c(916.49, 917.49, 918.50, 919.50, 920.50, 921.50, 922.50, 923.50, 924.50)
 per_total <- c(56.83, 28.41, 10.87, 3.05, 0.69, 0.13, 0.02, 0.00, 0.00)
@@ -170,7 +170,6 @@ nat_iso <- data.frame("isotope" = iso, "m/z" = m_z, "percent_total" = per_total,
 #Rdisop install (takes a long time)
 # source("https://bioconductor.org/biocLite.R")
 # biocLite("Rdisop")
-
 library("Rdisop")
 
 aa_form <- read.csv("aa_molecular_formula.csv")
@@ -189,10 +188,11 @@ aa_iso <- function(aa, max_iso = 8){
 
 aa_iso("L")
 
-# now lets try and make a function for a a simple peptide
+# now lets try and make a function for a simple peptide
 
 pep <- "SLR"
 pep_length <- nchar(pep)
+pep_bond <- pep_length - 1
 
 aa_sep <- NULL
 for (i in 1:pep_length){
@@ -239,31 +239,6 @@ element <- function(formula){
   result
 }
 
-
-element_df <- function(formula){
-  # pattern to match the initial element assumes element starts with an upper 
-  # case and optional lower case followed by zero or more digits.
-  first <- "^([[:upper:]][[:lower:]]?)([0-9]*).*"
-  # inverse of above to remove the initial element
-  last <- "^[[:upper:]][[:lower:]]?[0-9]*(.*)"
-  result <- list()
-  extract <- formula
-  # repeat as long as there is data
-  while ((start <- nchar(extract)) > 0){
-    chem <- sub(first, '\\1 \\2', extract)
-    extract <- sub(last, '\\1', extract)
-    # if the number of characters is the same, then there was an error
-    if (nchar(extract) == start){
-      warning("Invalid formula:", formula)
-      return(NULL)
-    }
-    # append to the list
-    result[[length(result) + 1L]] <- strsplit(chem, ' ')[[1]]
-  }
-  result
-}
-
-
 ans <- unlist(element("C5H6O3"))
 
 
@@ -273,12 +248,27 @@ num <- ans[rep(seq(from = 2, to = length(ans), by = 2), 1)]
 df <- as.data.frame(cbind(elem, num))
 df$num <- as.numeric(as.character(df$num))
 
-select(df, )
 
+# correcting for loss of water in the peptide bond
+df[elem == "H", "num"] <- (df[elem == "H", "num"] - 2 * pep_bond)
+df[elem == "O", "num"] <- (df[elem == "O", "num"] - 1 * pep_bond)
 
-for (i in length(aa_sep)){
-  
+# convert from data frame back to molecular fomula string
+df_mat = as.matrix(df)
+df_list = c()
+for (i in seq(1:nrow(df_mat))){
+  df_list = c(df_list, df_mat[i,])
 }
+pep_mol <- paste(as.character(df_list), sep = "", collapse = "")
+
+# get isotope on final molecule
+
+pep_molecule <- getMolecule(pep_mol)
+
+getIsotope(pep_molecule)
+
+
+
 
 
 # Model data frame -------------------------------------------------------------
