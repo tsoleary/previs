@@ -171,103 +171,104 @@ nat_iso <- data.frame("isotope" = iso, "m/z" = m_z, "percent_total" = per_total,
 # source("https://bioconductor.org/biocLite.R")
 # biocLite("Rdisop")
 library("Rdisop")
-
 aa_form <- read.csv("aa_molecular_formula.csv")
 
-L_row <- grep("L", aa_form$letter)
-Leu <- getMolecule(as.character(aa_form[L_row, "molecular_formula"]), z = 1)
-getIsotope(Leu, seq(1,4))
-
-
-# now lets try to turn that into a simple function that does it all
-aa_iso <- function(aa, max_iso = 8){
-  row <- grep(aa, aa_form$letter)
-  mol <- getMolecule(as.character(aa_form[row, "molecular_formula"]), z = 1) 
-  getIsotope(mol, seq(1, max_iso))
-}
-
-aa_iso("L")
+# L_row <- grep("L", aa_form$letter)
+# Leu <- getMolecule(as.character(aa_form[L_row, "molecular_formula"]), z = 1)
+# getIsotope(Leu, seq(1,4))
+# # now lets try to turn that into a simple function that does it all
+# aa_iso <- function(aa, max_iso = 8){
+#   row <- grep(aa, aa_form$letter)
+#   mol <- getMolecule(as.character(aa_form[row, "molecular_formula"]), z = 1) 
+#   getIsotope(mol, seq(1, max_iso))
+# }
+# 
+# aa_iso("L")
 
 # now lets try and make a function for a simple peptide
-
-pep <- "SLR"
-pep_length <- nchar(pep)
-pep_bond <- pep_length - 1
-
-aa_sep <- NULL
-for (i in 1:pep_length){
-  aa <- substr(pep, i, i)
-  aa_sep <- c(aa_sep, aa) 
-}
-
-as.list(strsplit(pep, ""))
-
-for (j in 1:length(aa_sep)){
-  row <- grep(aa_sep[j], aa_form$letter)
-  mol <- as.character(aa_form[row, "molecular_formula"])
+# need to add 
+pep_iso <- function (pep, max_iso = 9, charge = 1){
+  pep_length <- nchar(pep)
+  pep_bond <- pep_length - 1
   
-}
-
-row <- grep(aa_sep[1], aa_form$letter)
-mol <- as.character(aa_form[row, "molecular_formula"])
-mols <- paste0(mol, mol)
-paste0(mols)
-
-
-getMolecule(mols)$formula
-
-element <- function(formula){
-  # pattern to match the initial element assumes element starts with an upper 
-  # case and optional lower case followed by zero or more digits.
-  first <- "^([[:upper:]][[:lower:]]?)([0-9]*).*"
-  # inverse of above to remove the initial element
-  last <- "^[[:upper:]][[:lower:]]?[0-9]*(.*)"
-  result <- list()
-  extract <- formula
-  # repeat as long as there is data
-  while ((start <- nchar(extract)) > 0){
-    chem <- sub(first, '\\1 \\2', extract)
-    extract <- sub(last, '\\1', extract)
-    # if the number of characters is the same, then there was an error
-    if (nchar(extract) == start){
-      warning("Invalid formula:", formula)
-      return(NULL)
-      }
-    # append to the list
-    result[[length(result) + 1L]] <- strsplit(chem, ' ')[[1]]
+    aa_sep <- NULL
+    for (i in 1:pep_length){
+      aa <- substr(pep, i, i)
+      aa_sep <- c(aa_sep, aa)
     }
-  result
+  
+    mols <- NULL
+    for (j in 1:length(aa_sep)){
+      row <- grep(aa_sep[j], aa_form$letter)
+      mol <- as.character(aa_form[row, "molecular_formula"])
+      mols <- paste0(mols, mol)
+    }
+  
+  pep_tot <- getMolecule(mols)$formula
+  
+  element <- function(formula){
+    # pattern to match the initial element assumes element starts with an upper 
+    # case and optional lower case followed by zero or more digits.
+    first <- "^([[:upper:]][[:lower:]]?)([0-9]*).*"
+    # inverse of above to remove the initial element
+    last <- "^[[:upper:]][[:lower:]]?[0-9]*(.*)"
+    result <- list()
+    extract <- formula
+    # repeat as long as there is data
+    while ((start <- nchar(extract)) > 0){
+      chem <- sub(first, '\\1 \\2', extract)
+      extract <- sub(last, '\\1', extract)
+      # if the number of characters is the same, then there was an error
+      if (nchar(extract) == start){
+        warning("Invalid formula:", formula)
+        return(NULL)
+        }
+      # append to the list
+      result[[length(result) + 1L]] <- strsplit(chem, ' ')[[1]]
+      }
+    result
+  }
+  
+  ans <- unlist(element(pep_tot))
+  
+    if (ans[length(ans)] == "S"){
+      ans <- c(ans, "0")
+    }
+  
+  elem <- ans[rep(seq(from = 1, to = length(ans), by = 2), 1)]
+  num <- ans[rep(seq(from = 2, to = length(ans), by = 2), 1)]
+  
+  df <- as.data.frame(cbind(elem, num))
+  df$num <- as.numeric(as.character(df$num))
+  
+  # correcting for loss of water in the peptide bond
+  df[elem == "H", "num"] <- (df[elem == "H", "num"] - (2 * pep_bond) + charge)
+  df[elem == "O", "num"] <- (df[elem == "O", "num"] - 1 * pep_bond)
+  
+  # convert from data frame back to molecular fomula string
+  df_mat <- as.matrix(df)
+  df_list <- NULL
+    for (k in seq(1:nrow(df_mat))){
+      df_list <- c(df_list, df_mat[k, ])
+    }
+  pep_mol <- str_replace(paste(as.character(df_list), sep = "", collapse = ""),
+                         " ", "")
+  pep_mol <- str_replace(pep_mol, " ", "")
+  
+  # get isotope on final molecule
+  pep_molecule <- getMolecule(pep_mol, z = charge)
+  pep_dist <- as.data.frame(getIsotope(pep_molecule, seq(1, max_iso)), 
+                row.names = c("m_z", "per_total"))
+  colnames(pep_dist) <- paste0("M_", 0:(max_iso-1))
+  pep_dist <- as.data.frame(t(pep_dist))
+  pep_dist$m_z <- (pep_dist$m_z / charge)
+  pep_dist <- round(pep_dist, 3)
+  
+  return(pep_dist)
+
 }
 
-ans <- unlist(element("C5H6O3"))
-
-
-elem <- ans[rep(seq(from = 1, to = length(ans), by = 2), 1)]
-num <- ans[rep(seq(from = 2, to = length(ans), by = 2), 1)]
-
-df <- as.data.frame(cbind(elem, num))
-df$num <- as.numeric(as.character(df$num))
-
-
-# correcting for loss of water in the peptide bond
-df[elem == "H", "num"] <- (df[elem == "H", "num"] - 2 * pep_bond)
-df[elem == "O", "num"] <- (df[elem == "O", "num"] - 1 * pep_bond)
-
-# convert from data frame back to molecular fomula string
-df_mat = as.matrix(df)
-df_list = c()
-for (i in seq(1:nrow(df_mat))){
-  df_list = c(df_list, df_mat[i,])
-}
-pep_mol <- paste(as.character(df_list), sep = "", collapse = "")
-
-# get isotope on final molecule
-
-pep_molecule <- getMolecule(pep_mol)
-
-getIsotope(pep_molecule)
-
-
+pep_iso("SAMPLLER", charge = 2)
 
 
 
