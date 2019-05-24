@@ -158,7 +158,7 @@ deg_new <- 0.0500
 # data frame 
 time <- 0:168
 
-# nat_iso distribution of SAMPLER peptide
+# nat_iso distribution of SAMPLLER peptide
 iso <- 0:8
 m_z <- c(916.49, 917.49, 918.50, 919.50, 920.50, 921.50, 922.50, 923.50, 924.50)
 per_total <- c(56.83, 28.41, 10.87, 3.05, 0.69, 0.13, 0.02, 0.00, 0.00)
@@ -173,20 +173,7 @@ nat_iso <- data.frame("isotope" = iso, "m/z" = m_z, "percent_total" = per_total,
 library("Rdisop")
 aa_form <- read.csv("aa_molecular_formula.csv")
 
-# L_row <- grep("L", aa_form$letter)
-# Leu <- getMolecule(as.character(aa_form[L_row, "molecular_formula"]), z = 1)
-# getIsotope(Leu, seq(1,4))
-# # now lets try to turn that into a simple function that does it all
-# aa_iso <- function(aa, max_iso = 8){
-#   row <- grep(aa, aa_form$letter)
-#   mol <- getMolecule(as.character(aa_form[row, "molecular_formula"]), z = 1) 
-#   getIsotope(mol, seq(1, max_iso))
-# }
-# 
-# aa_iso("L")
-
-# now lets try and make a function for a simple peptide
-# need to add 
+# isotope distribution for a peptide - data frame output
 pep_iso <- function (pep, max_iso = 9, charge = 1){
   pep_length <- nchar(pep)
   pep_bond <- pep_length - 1
@@ -268,9 +255,7 @@ pep_iso <- function (pep, max_iso = 9, charge = 1){
 
 }
 
-pep_iso("SAMPLLER", charge = 2)
-
-
+nat_iso <- pep_iso("SAMPLLER", charge = 1)
 
 # Model data frame -------------------------------------------------------------
 mod <- data.frame("time" = time)
