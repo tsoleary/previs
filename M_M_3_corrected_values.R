@@ -2,10 +2,6 @@
 
 library(tidyverse)
 library(plotly)
-
-#Rdisop install (takes a long time)
-# source("https://bioconductor.org/biocLite.R")
-# biocLite("Rdisop")
 library("Rdisop")
 
 # Tidy the data ----------------------------------------------------------------
@@ -237,15 +233,25 @@ for (i in 1:(nrow(mod)-1)){
     mod[i, "D3_0_old_pool"] - mod[i, "D3_0_old_pool"] * deg_old
 }
 
+# function for deg only
+deg <- function (pool, deg){
+  for (i in 1:(nrow(mod)-1)){
+    mod[i + 1, pool] <- 
+      mod[i, pool] - mod[i, pool] * deg
+  }
+}
 
-# distribution of all the isotopes within a pool 
-isos <- paste0("M_", 0:9)
-for (i in isos){
-  mod[, paste0("D3_0_old_", i)] <- 
-    mod$D3_0_old_pool * nat_iso[i, "per_total"]
+deg_syn <- function (pool, deg, syn, D3_num){
+  for (i in 1:(nrow(mod)-1)){
+    mod[i + 1, pool] <- 
+      mod[i, pool] - mod[i, pool] * deg
+    mod[i + 1, pool] <- 
+      mod[i, pool] + D3_pep_dist[D3_num] * syn
+  }
 }
 
 
+# distribution of all the isotopes within a pool 
 pool_iso_dist <- function (pool, isos = paste0("M_", 0:9)){
   for (i in isos){
     mod[, paste0("D3_0_old_", i)] <- 
@@ -255,9 +261,5 @@ pool_iso_dist <- function (pool, isos = paste0("M_", 0:9)){
 
 pool_iso_dist("D3_0_old_pool")
 
-pool = "D3_0_old_pool"
-
-
-
-mod <- mod[, c(1:2)]
+pool <- "D3_0_old_pool"
 
