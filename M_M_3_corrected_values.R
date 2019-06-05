@@ -4,9 +4,9 @@ library(tidyverse)
 library(plotly)
 library("Rdisop")
 
-# Tidy the data ----------------------------------------------------------------
-
 setwd("C:/Users/PrevBeast/Documents/R/Helms")
+
+# Tidy the data ----------------------------------------------------------------
 
 df_messy <- read.csv("All_isotopes_organized_select_reprex.csv")
 
@@ -102,12 +102,13 @@ for (col in isotopes){
   df[, paste(col, "hist_norm", sep = "_")] <- df[, col] / df$hist_avg
 }
 
+
+
 # Mega Model -------------------------------------------------------------------
 
 aa_form <- read.csv("aa_molecular_formula.csv")
 
-# initial conditions
-peptide <- "SAMPLLER"
+# Functions --------------------------------------------------------------------
 
 # calculates the distribution of newly synthesized D3-Leu peptides
 iso_dist <- function (pep, p = 0.5){
@@ -122,37 +123,24 @@ iso_dist <- function (pep, p = 0.5){
   }
   return(dis)
 }
-D3_pep_dist <- iso_dist(peptide)
-
-num_L <- str_count(peptide, pattern = "L")
-t0_abun <- 1000
-per_lab <- 0.50
-
-# rates
-deg_old <- 0.0500
-deg_new <- 0.0500
-
-
-# data frame 
-time <- 0:168
 
 # isotope distribution for a peptide - data frame output
 pep_iso <- function (pep, max_iso = 9, charge = 1){
   pep_length <- nchar(pep)
   pep_bond <- pep_length - 1
   
-    aa_sep <- NULL
-    for (i in 1:pep_length){
-      aa <- substr(pep, i, i)
-      aa_sep <- c(aa_sep, aa)
-    }
+  aa_sep <- NULL
+  for (i in 1:pep_length){
+    aa <- substr(pep, i, i)
+    aa_sep <- c(aa_sep, aa)
+  }
   
-    mols <- NULL
-    for (j in 1:length(aa_sep)){
-      row <- grep(aa_sep[j], aa_form$letter)
-      mol <- as.character(aa_form[row, "molecular_formula"])
-      mols <- paste0(mols, mol)
-    }
+  mols <- NULL
+  for (j in 1:length(aa_sep)){
+    row <- grep(aa_sep[j], aa_form$letter)
+    mol <- as.character(aa_form[row, "molecular_formula"])
+    mols <- paste0(mols, mol)
+  }
   
   pep_tot <- getMolecule(mols)$formula
   
@@ -172,18 +160,18 @@ pep_iso <- function (pep, max_iso = 9, charge = 1){
       if (nchar(extract) == start){
         warning("Invalid formula:", formula)
         return(NULL)
-        }
+      }
       # append to the list
       result[[length(result) + 1L]] <- strsplit(chem, ' ')[[1]]
-      }
+    }
     result
   }
   
   ans <- unlist(element(pep_tot))
   
-    if (ans[length(ans)] == "S"){
-      ans <- c(ans, "0")
-    }
+  if (ans[length(ans)] == "S"){
+    ans <- c(ans, "0")
+  }
   
   elem <- ans[rep(seq(from = 1, to = length(ans), by = 2), 1)]
   num <- ans[rep(seq(from = 2, to = length(ans), by = 2), 1)]
@@ -198,9 +186,9 @@ pep_iso <- function (pep, max_iso = 9, charge = 1){
   # convert from data frame back to molecular fomula string
   df_mat <- as.matrix(df)
   df_list <- NULL
-    for (k in seq(1:nrow(df_mat))){
-      df_list <- c(df_list, df_mat[k, ])
-    }
+  for (k in seq(1:nrow(df_mat))){
+    df_list <- c(df_list, df_mat[k, ])
+  }
   pep_mol <- str_replace(paste(as.character(df_list), sep = "", collapse = ""),
                          " ", "")
   pep_mol <- str_replace(pep_mol, " ", "")
@@ -208,26 +196,43 @@ pep_iso <- function (pep, max_iso = 9, charge = 1){
   # get isotope on final molecule
   pep_molecule <- getMolecule(pep_mol, z = charge)
   pep_dist <- as.data.frame(getIsotope(pep_molecule, seq(1, max_iso)), 
-                row.names = c("m_z", "per_total"))
+                            row.names = c("m_z", "per_total"))
   colnames(pep_dist) <- paste0("M_", 0:(max_iso-1))
   pep_dist <- as.data.frame(t(pep_dist))
   pep_dist$m_z <- (pep_dist$m_z / charge)
   pep_dist <- round(pep_dist, 3)
   
   return(pep_dist)
-
+  
 }
 
-nat_iso <- pep_iso("SAMPLLER", charge = 1)
+# initial conditions -----------------------------------------------------------
 
-# Model data frame -------------------------------------------------------------
+# peptide specific
+peptide <- "SAMPLLER"
+D3_pep_dist <- iso_dist(peptide, p = 0.5)
+
+# natural isotopic distribution of the peptide
+nat_iso <- pep_iso(peptide, charge = 1)
+
+# initial total abundance at T0
+t0_abun <- 1000
+
+# rates
+deg_old <- 0.0500
+deg_new <- 0.0500
+syn <- 50
+
+# length of time
+time <- 0:168
+
+# model data frame -------------------------------------------------------------
 
 mod <- data.frame("time" = time)
 
 mod[1, "D3_0_old_pool"] <- t0_abun
 
 # 0-D3 Leu old decay only
-# turn this into a function. decay only! and later one with synthesis? yeah
 for (i in 1:(nrow(mod)-1)){
   mod[i + 1, "D3_0_old_pool"] <- 
     mod[i, "D3_0_old_pool"] - mod[i, "D3_0_old_pool"] * deg_old
@@ -235,11 +240,13 @@ for (i in 1:(nrow(mod)-1)){
 
 # function for deg only
 deg <- function (pool, deg){
-  for (i in 1:(nrow(mod)-1)){
+  for (i in 1:(nrow(mod) - 1)){
     mod[i + 1, pool] <- 
       mod[i, pool] - mod[i, pool] * deg
   }
 }
+
+mod$D3_0_old_pool <- deg("D3_0_old_pool", deg_old)
 
 deg_syn <- function (pool, deg, syn, D3_num){
   for (i in 1:(nrow(mod)-1)){
