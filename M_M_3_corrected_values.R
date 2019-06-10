@@ -213,9 +213,10 @@ deg_syn <- function (deg, syn, initial, D3_i){
   list <- NULL
   D3_syn <- syn * D3_pep_dist[D3_i + 1]
   
-  for (i in 1:(nrow(mod))){
+  for (i in 1:((nrow(mod) - 1))){
     if (is.null(temp) == TRUE){
       temp <- initial
+      list<- c(temp)
     }
     temp <- temp - (temp * deg) + D3_syn
     list <- c(list, temp)
@@ -253,10 +254,35 @@ mod$D3_0_old_pool <- deg_syn(deg_old, syn = 0, initial = t0_abun, D3_i = 0)
 # D3_0_new
 mod$D3_0_new_pool <- deg_syn(deg_new, syn, initial = 0, D3_i = 0)
 
-# need to correct for synthesis rate of just that isotopomer
+# D3_1_new
+mod$D3_1_new_pool <- deg_syn(deg_new, syn, initial = 0, D3_i = 1)
+
+# D3_2_new
+mod$D3_2_new_pool <- deg_syn(deg_new, syn, initial = 0, D3_i = 2)
 
 
+pool_names <- c("D3_0_old", "D3_0_new", 
+                paste("D3", 1:length(D3_pep_dist), "new", sep = "_"))
 
+for (pool in pool_names){
+  
+  if (grepl("old", pool) == TRUE){
+    syn <- 0
+    deg <- deg_old
+    initial <- t0_abun
+    }
+  
+  
+  
+  temp <- deg_syn(deg, syn, initial )
+  
+}
+
+# create a function that now makes these columns automatically for each pool
+
+for (i in 1:length(D3_pep_dist)){
+  
+}
 
 
 # function for the distribution of all the isotopes within a pool --------------
@@ -271,3 +297,9 @@ pool_iso_dist <- function (pool, isos = paste0("M_", 0:9)){
 }
 
 df_test <- cbind(mod, pool_iso_dist("D3_0_old_pool"))
+
+pool_cols <- grep("pool", colnames(mod))
+
+for (i in pool_cols){
+  
+}
