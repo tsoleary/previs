@@ -206,6 +206,22 @@ pep_iso <- function (pep, max_iso = 9, charge = 1){
   
 }
 
+# deg_syn function
+deg_syn <- function (deg, syn, initial = 0){
+  
+  temp <- NULL
+  list <- NULL
+  
+  for (i in 1:(nrow(mod))){
+    if (is.null(temp) == TRUE){
+      temp <- initial
+    }
+    temp <- temp - (temp * deg) + syn
+    list <- c(list, temp)
+  }
+  return(list)
+}
+
 # initial conditions -----------------------------------------------------------
 
 # peptide specific
@@ -230,50 +246,13 @@ time <- 0:168
 
 mod <- data.frame("time" = time)
 
-mod[1, "D3_0_old_pool"] <- t0_abun
+# D3_0_old
+mod$D3_0_old_pool <- deg_syn(deg_old, syn, initial = t0_abun)
 
-# 0-D3 Leu old decay only
-for (i in 1:(nrow(mod)-1)){
-  mod[i + 1, "D3_0_old_pool"] <- 
-    mod[i, "D3_0_old_pool"] - mod[i, "D3_0_old_pool"] * deg_old
-}
+# D3_0_new
+mod$D3_0_new_pool <- deg_syn(deg_new, syn, initial = 0)
 
-# function for deg only
-deg <- function (pool, deg){
-  for (i in 1:(nrow(mod) - 1)){
-    mod[i + 1, pool] <-
-      mod[i, pool] - mod[i, pool] * deg
-  }
-}
-mod$D3_0_old_pool <- deg("D3_0_old_pool", deg_old)
-
-deg_syn <- function (pool, deg, syn, D3_num){
-  temp <- NULL
-  for (i in 1:(nrow(mod) - 1)){
-    mod[i + 1, pool] <-
-      mod[i, pool] - mod[i, pool] * deg
-    mod[i + 1, pool] <-
-      mod[i, pool] + D3_pep_dist[D3_num] * syn
-  }
-}
-
-# de-bug deg_syn
-
-temp <- NULL
-list <- NULL
-initial <- 1000
-syn <- 0
-deg <- .05
-
-for (i in 1:(nrow(mod))){
-  if (is.null(temp) == TRUE){
-    temp <- initial
-  }
-  temp <- temp - (temp * deg) + syn
-  list <- c(list, temp)
-}
-
-mod$temp <- list
+# need to correct for synthesis rate of just that isotopomer
 
 
 
