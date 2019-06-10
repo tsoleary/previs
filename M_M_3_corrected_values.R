@@ -238,43 +238,56 @@ for (i in 1:(nrow(mod)-1)){
     mod[i, "D3_0_old_pool"] - mod[i, "D3_0_old_pool"] * deg_old
 }
 
-# # function for deg only
-# deg <- function (pool, deg){
-#   for (i in 1:(nrow(mod) - 1)){
-#     mod[i + 1, pool] <- 
-#       mod[i, pool] - mod[i, pool] * deg
-#   }
-# }
-# mod$D3_0_old_pool <- deg("D3_0_old_pool", deg_old)
-
-# deg_syn <- function (pool, deg, syn, D3_num){
-#   for (i in 1:(nrow(mod)-1)){
-#     mod[i + 1, pool] <- 
-#       mod[i, pool] - mod[i, pool] * deg
-#     mod[i + 1, pool] <- 
-#       mod[i, pool] + D3_pep_dist[D3_num] * syn
-#   }
-# }
-
-
-# distribution of all the isotopes within a pool 
-pool_iso_dist <- function (pool, isos = paste0("M_", 0:9)){
-  temp_df <- NULL
-  for (i in isos){
-    temp_df[, paste0(pool, i)] <- 
-      mod[, pool] * nat_iso[i, "per_total"]
+# function for deg only
+deg <- function (pool, deg){
+  for (i in 1:(nrow(mod) - 1)){
+    mod[i + 1, pool] <-
+      mod[i, pool] - mod[i, pool] * deg
   }
-  return(temp_df)
+}
+mod$D3_0_old_pool <- deg("D3_0_old_pool", deg_old)
+
+deg_syn <- function (pool, deg, syn, D3_num){
+  temp <- NULL
+  for (i in 1:(nrow(mod) - 1)){
+    mod[i + 1, pool] <-
+      mod[i, pool] - mod[i, pool] * deg
+    mod[i + 1, pool] <-
+      mod[i, pool] + D3_pep_dist[D3_num] * syn
+  }
 }
 
-isos <- paste0("M_", 0:9)
+# de-bug deg_syn
 
+temp <- NULL
+list <- NULL
+initial <- 1000
+syn <- 0
+deg <- .05
 
-for (i in isos){
-  mod[, paste0("D3_0_old_pool", i)] <- 
-    mod[, "D3_0_old_pool"] * nat_iso[i, "per_total"]
+for (i in 1:(nrow(mod))){
+  if (is.null(temp) == TRUE){
+    temp <- initial
+  }
+  temp <- temp - (temp * deg) + syn
+  list <- c(list, temp)
 }
 
+mod$temp <- list
 
-df <- pool_iso_dist("D3_0_old_pool")
 
+
+
+
+# function for the distribution of all the isotopes within a pool --------------
+pool_iso_dist <- function (pool, isos = paste0("M_", 0:9)){
+  df <- NULL
+  for (i in isos){
+    temp <- mod[, pool] * nat_iso[i, "per_total"]
+    df <- cbind(df, temp)
+  }
+  colnames(df) <- paste(pool, isos, sep = "_")
+  return(df)
+}
+
+df_test <- cbind(mod, pool_iso_dist("D3_0_old_pool"))
