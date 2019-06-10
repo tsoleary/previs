@@ -19,9 +19,9 @@ df_tidy <- df_messy %>%
 df_tidy$hrs <- as.numeric(df_tidy$hrs)
 
 # average together the duplicate lines
-df_avg <- df_tidy %>%
-  group_by(protein, isotope, peptide, group, hrs) %>%
-  summarize(abundance = mean(abundance))
+df_avg_3 <- df_tidy %>%
+  group_by(protein, peptide, isotope, group, hrs) %>%
+  summarize(abundance = mean(abundance, na.rm = TRUE))
 
 # spreads out to columns by isotope: M_0, M_3, & Sum
 df <- as.data.frame(spread(df_avg, "isotope", "abundance"))
@@ -238,35 +238,43 @@ for (i in 1:(nrow(mod)-1)){
     mod[i, "D3_0_old_pool"] - mod[i, "D3_0_old_pool"] * deg_old
 }
 
-# function for deg only
-deg <- function (pool, deg){
-  for (i in 1:(nrow(mod) - 1)){
-    mod[i + 1, pool] <- 
-      mod[i, pool] - mod[i, pool] * deg
-  }
-}
+# # function for deg only
+# deg <- function (pool, deg){
+#   for (i in 1:(nrow(mod) - 1)){
+#     mod[i + 1, pool] <- 
+#       mod[i, pool] - mod[i, pool] * deg
+#   }
+# }
+# mod$D3_0_old_pool <- deg("D3_0_old_pool", deg_old)
 
-mod$D3_0_old_pool <- deg("D3_0_old_pool", deg_old)
-
-deg_syn <- function (pool, deg, syn, D3_num){
-  for (i in 1:(nrow(mod)-1)){
-    mod[i + 1, pool] <- 
-      mod[i, pool] - mod[i, pool] * deg
-    mod[i + 1, pool] <- 
-      mod[i, pool] + D3_pep_dist[D3_num] * syn
-  }
-}
+# deg_syn <- function (pool, deg, syn, D3_num){
+#   for (i in 1:(nrow(mod)-1)){
+#     mod[i + 1, pool] <- 
+#       mod[i, pool] - mod[i, pool] * deg
+#     mod[i + 1, pool] <- 
+#       mod[i, pool] + D3_pep_dist[D3_num] * syn
+#   }
+# }
 
 
 # distribution of all the isotopes within a pool 
 pool_iso_dist <- function (pool, isos = paste0("M_", 0:9)){
+  temp_df <- NULL
   for (i in isos){
-    mod[, paste0("D3_0_old_", i)] <- 
+    temp_df[, paste0(pool, i)] <- 
       mod[, pool] * nat_iso[i, "per_total"]
   }
+  return(temp_df)
 }
 
-pool_iso_dist("D3_0_old_pool")
+isos <- paste0("M_", 0:9)
 
-pool <- "D3_0_old_pool"
+
+for (i in isos){
+  mod[, paste0("D3_0_old_pool", i)] <- 
+    mod[, "D3_0_old_pool"] * nat_iso[i, "per_total"]
+}
+
+
+df <- pool_iso_dist("D3_0_old_pool")
 
