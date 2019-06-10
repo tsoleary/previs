@@ -207,16 +207,17 @@ pep_iso <- function (pep, max_iso = 9, charge = 1){
 }
 
 # deg_syn function
-deg_syn <- function (deg, syn, initial = 0){
+deg_syn <- function (deg, syn, initial, D3_i){
   
   temp <- NULL
   list <- NULL
+  D3_syn <- syn * D3_pep_dist[D3_i + 1]
   
   for (i in 1:(nrow(mod))){
     if (is.null(temp) == TRUE){
       temp <- initial
     }
-    temp <- temp - (temp * deg) + syn
+    temp <- temp - (temp * deg) + D3_syn
     list <- c(list, temp)
   }
   return(list)
@@ -247,10 +248,10 @@ time <- 0:168
 mod <- data.frame("time" = time)
 
 # D3_0_old
-mod$D3_0_old_pool <- deg_syn(deg_old, syn, initial = t0_abun)
+mod$D3_0_old_pool <- deg_syn(deg_old, syn = 0, initial = t0_abun, D3_i = 0)
 
 # D3_0_new
-mod$D3_0_new_pool <- deg_syn(deg_new, syn, initial = 0)
+mod$D3_0_new_pool <- deg_syn(deg_new, syn, initial = 0, D3_i = 0)
 
 # need to correct for synthesis rate of just that isotopomer
 
