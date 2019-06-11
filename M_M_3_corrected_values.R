@@ -323,7 +323,7 @@ for (pools in pool_cols){
 
 
 # function to get make an individual isotope distribution for each pool
-all_isos <- function(pool_cols){
+indiv_isos <- function(pool_cols){
 
   temp <- NULL
   df <- NULL
@@ -338,7 +338,7 @@ all_isos <- function(pool_cols){
   return(df)
 }
 
-df_all_isos <- all_isos(pool_cols)
+df_all_isos <- indiv_isos(pool_cols)
 
 mod <- cbind(mod, df_all_isos)
 
