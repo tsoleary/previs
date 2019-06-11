@@ -253,7 +253,7 @@ make_pools <- function(pool_names, syn, deg_old, deg_new, t0_abun){
   
 }
 
-# function for the distribution of all the isotopes within a pool --------------
+# function for the distribution of all the isotopes within a pool 
 pool_iso_dist <- function (pool) {
   
   isos <- paste0("M_", seq(((as.numeric(gsub("^D3_([0-9]+)_.*", 
@@ -270,6 +270,19 @@ pool_iso_dist <- function (pool) {
   
   colnames(df) <- paste(str_replace(pool, "_pool", ""), isos, sep = "_")
   
+  return(df)
+}
+
+# function to get make an individual isotope distribution for each pool
+all_isos <- function(pool_cols){
+  
+  temp <- NULL
+  df <- NULL
+  
+  for (pools in pool_cols){
+    temp <- pool_iso_dist(pools)
+    df <- cbind(df, temp)
+  }
   return(df)
 }
 
@@ -306,41 +319,42 @@ pool_df <- make_pools(pool_names, syn = 50, deg_old = 0.05,
 
 mod <- cbind(mod, pool_df)
 
-
-
-
 mod <- cbind(mod, pool_iso_dist("D3_0_old_pool"))
 
 pool_cols <- colnames(mod)[grep("pool", colnames(mod))]
 
-
-temp <- NULL
-df <- NULL
-for (pools in pool_cols){
-  temp <- pool_iso_dist(pools)
-  df <- cbind(df, temp)
-}
-
-
-# function to get make an individual isotope distribution for each pool
-indiv_isos <- function(pool_cols){
-
-  temp <- NULL
-  df <- NULL
-  
-  for (pools in pool_cols){
-    
-    temp <- pool_iso_dist(pools)
-    
-    df <- cbind(df, temp)
-    
-  }
-  return(df)
-}
-
-df_all_isos <- indiv_isos(pool_cols)
+df_all_isos <- all_isos(pool_cols)
 
 mod <- cbind(mod, df_all_isos)
+
+
+# need to create a function that combines all individual isotopes into one total
+
+mutate(mod, sum = colnames(mod)[grep("M_0", colnames(mod))], sum)
+
+df_test <- mod
+colnames(df_test) <- gsub("^.*(M_[0-9]+)", "\\1", colnames(df_test))
+
+mod[, paste("total", iso, sep = "_")] <- mod[, 6] + mod[, 15]
+
+mod_comb <- sapply(split.default(df_test, colnames(df_test)), 
+                   rowSums, na.rm = TRUE)
+
+
+y <- colnames(mod_comb)
+
+# the columns come out of order because it is lexographic indexing not numerical
+# need to pad the numbers with a 0
+
+x <- str_pad(gsub("M_", "", y), 2, pad = "0")
+
+sort(x)
+
+# now I need to condense and organize all the parts. possible make a separate
+# script to have all the functions on
+
+# then need to figure out how to work backwards to get the M_0 corrected values etc
+
 
 
 
