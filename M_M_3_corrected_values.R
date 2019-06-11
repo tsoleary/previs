@@ -261,22 +261,38 @@ mod$D3_1_new_pool <- deg_syn(deg_new, syn, initial = 0, D3_i = 1)
 mod$D3_2_new_pool <- deg_syn(deg_new, syn, initial = 0, D3_i = 2)
 
 
-pool_names <- c("D3_0_old", "D3_0_new", 
-                paste("D3", 1:length(D3_pep_dist), "new", sep = "_"))
+pool_names <- c("D3_0_old_pool", "D3_0_new_pool", 
+                paste("D3", 1:(length(D3_pep_dist) - 1), "new_pool", sep = "_"))
+
+temp <- NULL
+df <- NULL
 
 for (pool in pool_names){
   
   if (grepl("old", pool) == TRUE){
-    syn <- 0
-    deg <- deg_old
-    initial <- t0_abun
-    }
+    f_syn <- 0
+    f_deg <- deg_old
+    f_initial <- t0_abun
+  } else {
+      f_syn <- syn
+      f_deg <- deg_new
+      f_initial <- 0
+  }
   
+  temp <- deg_syn(f_deg, f_syn, f_initial, 
+                  D3_i = as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)))
   
-  
-  temp <- deg_syn(deg, syn, initial )
+  df <- cbind(df, temp)
   
 }
+
+colnames(df) <- pool_names
+
+
+mod <- cbind(mod, df)
+
+
+
 
 # create a function that now makes these columns automatically for each pool
 
