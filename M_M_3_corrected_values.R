@@ -224,73 +224,7 @@ deg_syn <- function (deg, syn, initial, D3_i){
   return(list)
 }
 
-# initial conditions -----------------------------------------------------------
-
-# peptide specific
-peptide <- "SAMPLLER"
-D3_pep_dist <- iso_dist(peptide, p = 0.5)
-
-# natural isotopic distribution of the peptide
-nat_iso <- pep_iso(peptide, charge = 1)
-
-# initial total abundance at T0
-t0_abun <- 1000
-
-# rates
-deg_old <- 0.0500
-deg_new <- 0.0500
-syn <- 50
-
-# length of time
-time <- 0:168
-
-# model data frame -------------------------------------------------------------
-
-mod <- data.frame("time" = time)
-
-# D3_0_old
-mod$D3_0_old_pool <- deg_syn(deg_old, syn = 0, initial = t0_abun, D3_i = 0)
-
-# D3_0_new
-mod$D3_0_new_pool <- deg_syn(deg_new, syn, initial = 0, D3_i = 0)
-
-# D3_1_new
-mod$D3_1_new_pool <- deg_syn(deg_new, syn, initial = 0, D3_i = 1)
-
-# D3_2_new
-mod$D3_2_new_pool <- deg_syn(deg_new, syn, initial = 0, D3_i = 2)
-
-
-pool_names <- c("D3_0_old_pool", "D3_0_new_pool", 
-                paste("D3", 1:(length(D3_pep_dist) - 1), "new_pool", sep = "_"))
-
-temp <- NULL
-df <- NULL
-
-for (pool in pool_names){
-  if (grepl("old", pool) == TRUE){
-    f_syn <- 0
-    f_deg <- deg_old
-    f_initial <- t0_abun
-  } else {
-      f_syn <- syn
-      f_deg <- deg_new
-      f_initial <- 0
-  }
-  temp <- deg_syn(f_deg, f_syn, f_initial, 
-                  D3_i = as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)))
-  df <- cbind(df, temp)
-}
-colnames(df) <- pool_names
-
-
-mod <- cbind(mod, df)
-
-
-
-
-# make_pools function --------------------------------------------------------
-
+# make_pools function 
 make_pools <- function(pool_names, syn, deg_old, deg_new, t0_abun){
   
   temp <- NULL
@@ -319,24 +253,64 @@ make_pools <- function(pool_names, syn, deg_old, deg_new, t0_abun){
   
 }
 
+# initial conditions -----------------------------------------------------------
+
+# peptide specific
+peptide <- "SAMPLLER"
+D3_pep_dist <- iso_dist(peptide, p = 0.5)
+
+# natural isotopic distribution of the peptide
+nat_iso <- pep_iso(peptide, charge = 1)
+
+# initial total abundance at T0
+t0_abun <- 1000
+
+# rates
+deg_old <- 0.0500
+deg_new <- 0.0500
+syn <- 50
+
+# length of time
+time <- 0:168
+
+# model data frame -------------------------------------------------------------
+
+mod <- data.frame("time" = time)
+
+pool_names <- c("D3_0_old_pool", "D3_0_new_pool", 
+                paste("D3", 1:(length(D3_pep_dist) - 1), "new_pool", sep = "_"))
+
 pool_df <- make_pools(pool_names, syn = 50, deg_old = 0.05, 
                       deg_new = 0.05, t0_abun = 1000)
 
 mod <- cbind(mod, pool_df)
 
-
 # function for the distribution of all the isotopes within a pool --------------
-pool_iso_dist <- function (pool, isos = paste0("M_", 0:9)){
+pool_iso_dist <- function (pool) {
+  
+  isos <- paste0("M_", seq(as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)), 
+                           by = 1, length = 9))
+  
   df <- NULL
   for (i in isos){
     temp <- mod[, pool] * nat_iso[i, "per_total"]
     df <- cbind(df, temp)
   }
-  colnames(df) <- paste(pool, isos, sep = "_")
+  
+  
+  colnames(df) <- paste(str_replace(pool, "_pool", ""), isos, sep = "_")
+  
   return(df)
 }
 
-df_test <- cbind(mod, pool_iso_dist("D3_0_old_pool"))
+# need to get it to remove the word pool from the new colnames
+
+
+paste("D3_0_old_pool", isos, sep = "_")
+
+str_replace("D3_0_old_pool", "_pool", "")
+
+df_test1 <- cbind(mod, pool_iso_dist("D3_0_old_pool"))
 
 pool_cols <- grep("pool", colnames(mod))
 
