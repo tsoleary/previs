@@ -268,7 +268,6 @@ temp <- NULL
 df <- NULL
 
 for (pool in pool_names){
-  
   if (grepl("old", pool) == TRUE){
     f_syn <- 0
     f_deg <- deg_old
@@ -278,14 +277,10 @@ for (pool in pool_names){
       f_deg <- deg_new
       f_initial <- 0
   }
-  
   temp <- deg_syn(f_deg, f_syn, f_initial, 
                   D3_i = as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)))
-  
   df <- cbind(df, temp)
-  
 }
-
 colnames(df) <- pool_names
 
 
@@ -294,11 +289,40 @@ mod <- cbind(mod, df)
 
 
 
-# create a function that now makes these columns automatically for each pool
+# make_pools function --------------------------------------------------------
 
-for (i in 1:length(D3_pep_dist)){
+make_pools <- function(pool_names, syn, deg_old, deg_new, t0_abun){
+  
+  temp <- NULL
+  df <- NULL
+  
+  for (pool in pool_names){
+    if (grepl("old", pool) == TRUE){
+      f_syn <- 0
+      f_deg <- deg_old
+      f_initial <- t0_abun
+    } else {
+      f_syn <- syn
+      f_deg <- deg_new
+      f_initial <- 0
+    }
+    
+    temp <- deg_syn(f_deg, f_syn, f_initial, 
+                    D3_i = as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)))
+    
+    df <- cbind(df, temp)
+  }
+  
+  colnames(df) <- pool_names
+  
+  return(df)
   
 }
+
+pool_df <- make_pools(pool_names, syn = 50, deg_old = 0.05, 
+                      deg_new = 0.05, t0_abun = 1000)
+
+mod <- cbind(mod, pool_df)
 
 
 # function for the distribution of all the isotopes within a pool --------------
