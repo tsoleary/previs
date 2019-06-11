@@ -253,6 +253,26 @@ make_pools <- function(pool_names, syn, deg_old, deg_new, t0_abun){
   
 }
 
+# function for the distribution of all the isotopes within a pool --------------
+pool_iso_dist <- function (pool) {
+  
+  isos <- paste0("M_", seq(((as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)))*3), 
+                           by = 1, length = 9))
+  
+  temp <- NULL
+  df <- NULL
+  for (i in 1:length(isos)){
+    temp <- mod[, pool] * nat_iso[i, "per_total"]
+    df <- cbind(df, temp)
+  }
+  
+  
+  colnames(df) <- paste(str_replace(pool, "_pool", ""), isos, sep = "_")
+  
+  return(df)
+}
+
+
 # initial conditions -----------------------------------------------------------
 
 # peptide specific
@@ -278,42 +298,32 @@ time <- 0:168
 mod <- data.frame("time" = time)
 
 pool_names <- c("D3_0_old_pool", "D3_0_new_pool", 
-                paste("D3", 1:(length(D3_pep_dist) - 1), "new_pool", sep = "_"))
+                paste("D3", 1:(length(D3_pep_dist) - 1), "pool", sep = "_"))
 
 pool_df <- make_pools(pool_names, syn = 50, deg_old = 0.05, 
                       deg_new = 0.05, t0_abun = 1000)
 
 mod <- cbind(mod, pool_df)
 
-# function for the distribution of all the isotopes within a pool --------------
-pool_iso_dist <- function (pool) {
+
+
+
+mod <- cbind(mod, pool_iso_dist("D3_0_old_pool"))
+
+pool_cols <- colnames(mod)[grep("pool", colnames(mod))]
+
+temp <- NULL
+df <- NULL
+for (pools in pool_cols){
   
-  isos <- paste0("M_", seq(as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)), 
-                           by = 1, length = 9))
+  temp <- pool_iso_dist(pools)
   
-  df <- NULL
-  for (i in isos){
-    temp <- mod[, pool] * nat_iso[i, "per_total"]
-    df <- cbind(df, temp)
-  }
-  
-  
-  colnames(df) <- paste(str_replace(pool, "_pool", ""), isos, sep = "_")
-  
-  return(df)
-}
-
-# need to get it to remove the word pool from the new colnames
-
-
-paste("D3_0_old_pool", isos, sep = "_")
-
-str_replace("D3_0_old_pool", "_pool", "")
-
-df_test1 <- cbind(mod, pool_iso_dist("D3_0_old_pool"))
-
-pool_cols <- grep("pool", colnames(mod))
-
-for (i in pool_cols){
+  df <- cbind(df, temp)
   
 }
+
+
+
+
+
+
