@@ -256,7 +256,8 @@ make_pools <- function(pool_names, syn, deg_old, deg_new, t0_abun){
 # function for the distribution of all the isotopes within a pool --------------
 pool_iso_dist <- function (pool) {
   
-  isos <- paste0("M_", seq(((as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)))*3), 
+  isos <- paste0("M_", seq(((as.numeric(gsub("^D3_([0-9]+)_.*", 
+                                             "\\1", pool)))*3), 
                            by = 1, length = 9))
   
   temp <- NULL
@@ -312,16 +313,34 @@ mod <- cbind(mod, pool_iso_dist("D3_0_old_pool"))
 
 pool_cols <- colnames(mod)[grep("pool", colnames(mod))]
 
+
 temp <- NULL
 df <- NULL
 for (pools in pool_cols){
-  
   temp <- pool_iso_dist(pools)
-  
   df <- cbind(df, temp)
-  
 }
 
+
+# function to get make an individual isotope distribution for each pool
+all_isos <- function(pool_cols){
+
+  temp <- NULL
+  df <- NULL
+  
+  for (pools in pool_cols){
+    
+    temp <- pool_iso_dist(pools)
+    
+    df <- cbind(df, temp)
+    
+  }
+  return(df)
+}
+
+df_all_isos <- all_isos(pool_cols)
+
+mod <- cbind(mod, df_all_isos)
 
 
 
