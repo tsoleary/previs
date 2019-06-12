@@ -3,8 +3,8 @@
 
 library(tidyverse)
 
-setwd("C:/Users/PrevBeast/Documents/R/WT v KO mouse")
-data_raw <- read.csv("DIS_GOL_proteomics_all_pep.csv")
+setwd("C:/Users/PrevBeast/Documents/R/HCM")
+data_raw <- read.csv("HCM_duplicate_2_all_peptides.csv")
 
 # Normalization ----------------------------------------------------------------
 
@@ -38,7 +38,7 @@ norm_pro <- myosin
 norm_pep <- subset(data, data$Master.Protein.Accessions == norm_pro)
 numeric_cols <- which(sapply(norm_pep, is.numeric) == TRUE)
 raw_abun <- numeric_cols[-length(numeric_cols)]
-norm_value <- sapply(norm_pep[, raw_abun], mean)
+norm_value <- sapply(norm_pep[, raw_abun], mean, na.rm = TRUE)
 
 raw_abun_mat <- as.matrix(data[, raw_abun])
 
@@ -95,9 +95,9 @@ data$group3_df <- count_df(data, group3)
 data$ctrl_df <- count_df(data, ctrl)
 
 # Removing rows with NA values for the median
-data <- data[!(is.na(data$ratio1)), ]
-data <- data[!(is.na(data$ratio2)), ]
-data <- data[!(is.na(data$ratio3)), ]
+# data <- data[!(is.na(data$ratio1)), ]
+# data <- data[!(is.na(data$ratio2)), ]
+# data <- data[!(is.na(data$ratio3)), ]
 
 # Remove outliers --------------------------------------------------------------
 by_protein <- function (dat, groups, FUN = mean){
@@ -317,7 +317,7 @@ data$dummy7_DIS_3_norm_log <- NA
 data$dummy8_DIS_3_norm_log <- NA
 data$dummy9_DIS_3_norm_log <- NA
 
-# add 12 dummy columns to DIS_3
+# add 10 dummy columns to GOL
 data$dummy1_GOL_norm_log <- NA
 data$dummy2_GOL_norm_log <- NA
 data$dummy3_GOL_norm_log <- NA
@@ -328,8 +328,6 @@ data$dummy7_GOL_norm_log <- NA
 data$dummy8_GOL_norm_log <- NA
 data$dummy9_GOL_norm_log <- NA
 data$dummy10_GOL_norm_log <- NA
-data$dummy11_GOL_norm_log <- NA
-data$dummy12_GOL_norm_log <- NA
 
 
 group1_log_cols <- grep("DIS_1_norm_log", colnames(data))
@@ -413,4 +411,4 @@ min_pep <- 5
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-write.csv(protein, "HCM_DIS_GOL_myo_norm.csv")
+write.csv(protein, "HCM_duplicate_2_myosin_r.csv")
