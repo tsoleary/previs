@@ -4,42 +4,8 @@
 library(tidyverse)
 
 setwd("C:/Users/PrevBeast/Documents/R/HCM")
-dup1 <- read.csv("HCM_duplicate_1_all_peptides.csv")
-dup2 <- read.csv("HCM_duplicate_2_all_peptides.csv")
-
-dup1$seq_mod <- paste0(dup1$Annotated.Sequence, "_", dup1$Modifications)
-dup1$Annotated.Sequence <- NULL
-dup1$Modifications <- NULL
-
-dup2$seq_mod <- paste0(dup2$Annotated.Sequence, "_", dup2$Modifications)
-dup2$Annotated.Sequence <- NULL
-dup2$Modifications <- NULL
-
-data_raw <- full_join(dup1, dup2, by = "seq_mod")
-
-write.csv(data_raw, "mash_r.csv")
 
 data_raw <- read.csv("mash_r.csv")
-
-identical(data_raw$Annotated.Sequence.x, data_raw$Annotated.Sequence.y)
-identical(data_raw$Modifications.x, data_raw$Modifications.y)
-identical(data_raw$Master.Protein.Accessions.x, data_raw$Master.Protein.Accessions.y)
-
-which(as.character(data_raw$Master.Protein.Accessions.x) != as.character(data_raw$Master.Protein.Accessions.y))
-
-data_raw$Annotated.Sequence.y <- NULL
-data_raw$Modifications.y <- NULL
-data_raw$Master.Protein.Accessions.y <- NULL
-data_raw$seq_mod <- NULL
-
-data_raw$dup1_NA <- rowSums(apply(is.na(data_raw[, 4:50]), 2, as.numeric))
-data_raw$dup2_NA <- rowSums(apply(is.na(data_raw[, 51:97]), 2, as.numeric))
-
-length(which(data_raw$dup1_NA == 47))
-
-length(which(data_raw$dup2_NA == 47))
-
-data_raw <- filter(data_raw, data_raw$dup1_NA < 47 & data_raw$dup2_NA < 47)
 
 # Normalization ----------------------------------------------------------------
 
