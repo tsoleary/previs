@@ -4,7 +4,42 @@
 library(tidyverse)
 
 setwd("C:/Users/PrevBeast/Documents/R/HCM")
-data_raw <- read.csv("HCM_duplicate_2_all_peptides.csv")
+dup1 <- read.csv("HCM_duplicate_1_all_peptides.csv")
+dup2 <- read.csv("HCM_duplicate_2_all_peptides.csv")
+
+dup1$seq_mod <- paste0(dup1$Annotated.Sequence, "_", dup1$Modifications)
+dup1$Annotated.Sequence <- NULL
+dup1$Modifications <- NULL
+
+dup2$seq_mod <- paste0(dup2$Annotated.Sequence, "_", dup2$Modifications)
+dup2$Annotated.Sequence <- NULL
+dup2$Modifications <- NULL
+
+data_raw <- full_join(dup1, dup2, by = "seq_mod")
+
+write.csv(data_raw, "mash_r.csv")
+
+data_raw <- read.csv("mash_r.csv")
+
+identical(data_raw$Annotated.Sequence.x, data_raw$Annotated.Sequence.y)
+identical(data_raw$Modifications.x, data_raw$Modifications.y)
+identical(data_raw$Master.Protein.Accessions.x, data_raw$Master.Protein.Accessions.y)
+
+which(as.character(data_raw$Master.Protein.Accessions.x) != as.character(data_raw$Master.Protein.Accessions.y))
+
+data_raw$Annotated.Sequence.y <- NULL
+data_raw$Modifications.y <- NULL
+data_raw$Master.Protein.Accessions.y <- NULL
+data_raw$seq_mod <- NULL
+
+data_raw$dup1_NA <- rowSums(apply(is.na(data_raw[, 4:50]), 2, as.numeric))
+data_raw$dup2_NA <- rowSums(apply(is.na(data_raw[, 51:97]), 2, as.numeric))
+
+length(which(data_raw$dup1_NA == 47))
+
+length(which(data_raw$dup2_NA == 47))
+
+data_raw <- filter(data_raw, data_raw$dup1_NA < 47 & data_raw$dup2_NA < 47)
 
 # Normalization ----------------------------------------------------------------
 
@@ -21,6 +56,9 @@ by_group <- function (dat, col, FUN = median) {
 
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
+colnames(data_raw)[1:3] <-  c("Annotated.Sequence", "Modifications", 
+                              "Master.Protein.Accessions")
+
 # set the max number of peptides used in analysis
 max_pep <- 15
 
@@ -33,7 +71,7 @@ data <-
 myosin <- "A5YM51; P12883; P13533"
 histones <- "B4DR52; P06899"
 
-norm_pro <- myosin
+norm_pro <- histones
 
 norm_pep <- subset(data, data$Master.Protein.Accessions == norm_pro)
 numeric_cols <- which(sapply(norm_pep, is.numeric) == TRUE)
@@ -94,10 +132,13 @@ data$group2_df <- count_df(data, group2)
 data$group3_df <- count_df(data, group3)
 data$ctrl_df <- count_df(data, ctrl)
 
+# which(is.na(data$ratio1))
+
+
 # Removing rows with NA values for the median
-# data <- data[!(is.na(data$ratio1)), ]
-# data <- data[!(is.na(data$ratio2)), ]
-# data <- data[!(is.na(data$ratio3)), ]
+data <- data[!(is.na(data$ratio1)), ]
+data <- data[!(is.na(data$ratio2)), ]
+data <- data[!(is.na(data$ratio3)), ]
 
 # Remove outliers --------------------------------------------------------------
 by_protein <- function (dat, groups, FUN = mean){
@@ -298,13 +339,19 @@ length(group2_log_cols)
 length(group3_log_cols)
 length(ctrl_log_cols)
 
-# add 6 dummy columns to DIS_2
+# add 12 dummy columns to DIS_2
 data$dummy1_DIS_2_norm_log <- NA
 data$dummy2_DIS_2_norm_log <- NA
 data$dummy3_DIS_2_norm_log <- NA
 data$dummy4_DIS_2_norm_log <- NA
 data$dummy5_DIS_2_norm_log <- NA
 data$dummy6_DIS_2_norm_log <- NA
+data$dummy7_DIS_2_norm_log <- NA
+data$dummy8_DIS_2_norm_log <- NA
+data$dummy9_DIS_2_norm_log <- NA
+data$dummy10_DIS_2_norm_log <- NA
+data$dummy11_DIS_2_norm_log <- NA
+data$dummy12_DIS_2_norm_log <- NA
 
 # add 9 dummy columns to DIS_3
 data$dummy1_DIS_3_norm_log <- NA
@@ -316,6 +363,15 @@ data$dummy6_DIS_3_norm_log <- NA
 data$dummy7_DIS_3_norm_log <- NA
 data$dummy8_DIS_3_norm_log <- NA
 data$dummy9_DIS_3_norm_log <- NA
+data$dummy10_DIS_3_norm_log <- NA
+data$dummy11_DIS_3_norm_log <- NA
+data$dummy12_DIS_3_norm_log <- NA
+data$dummy13_DIS_3_norm_log <- NA
+data$dummy14_DIS_3_norm_log <- NA
+data$dummy15_DIS_3_norm_log <- NA
+data$dummy16_DIS_3_norm_log <- NA
+data$dummy17_DIS_3_norm_log <- NA
+data$dummy18_DIS_3_norm_log <- NA
 
 # add 10 dummy columns to GOL
 data$dummy1_GOL_norm_log <- NA
@@ -328,7 +384,16 @@ data$dummy7_GOL_norm_log <- NA
 data$dummy8_GOL_norm_log <- NA
 data$dummy9_GOL_norm_log <- NA
 data$dummy10_GOL_norm_log <- NA
-
+data$dummy11_GOL_norm_log <- NA
+data$dummy12_GOL_norm_log <- NA
+data$dummy13_GOL_norm_log <- NA
+data$dummy14_GOL_norm_log <- NA
+data$dummy15_GOL_norm_log <- NA
+data$dummy16_GOL_norm_log <- NA
+data$dummy17_GOL_norm_log <- NA
+data$dummy18_GOL_norm_log <- NA
+data$dummy19_GOL_norm_log <- NA
+data$dummy20_GOL_norm_log <- NA
 
 group1_log_cols <- grep("DIS_1_norm_log", colnames(data))
 group2_log_cols <- grep("DIS_2_norm_log", colnames(data))
@@ -411,4 +476,4 @@ min_pep <- 5
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-write.csv(protein, "HCM_duplicate_2_myosin_r.csv")
+write.csv(protein, "HCM_duplicate_combined_r.csv")
