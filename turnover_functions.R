@@ -79,9 +79,8 @@ pep_iso <- function (pep, max_iso = 9, charge = 1){
   for (k in seq(1:nrow(df_mat))){
     df_list <- c(df_list, df_mat[k, ])
   }
-  pep_mol <- str_replace(paste(as.character(df_list), sep = "", collapse = ""),
-                         " ", "")
-  pep_mol <- str_replace(pep_mol, " ", "")
+  pep_mol <- gsub(" ", "", 
+                  paste(as.character(df_list), sep = "", collapse = ""))
   
   # get isotope on final molecule
   pep_molecule <- getMolecule(pep_mol, z = charge)
@@ -97,13 +96,13 @@ pep_iso <- function (pep, max_iso = 9, charge = 1){
 }
 
 # deg_syn function
-deg_syn <- function (deg, syn, initial, D3_i){
+deg_syn <- function (df, deg, syn, initial, D3_i){
   
   temp <- NULL
   list <- NULL
   D3_syn <- syn * D3_pep_dist[D3_i + 1]
   
-  for (i in 1:((nrow(mod) - 1))){
+  for (i in 1:((nrow(df) - 1))){
     if (is.null(temp) == TRUE){
       temp <- initial
       list<- c(temp)
@@ -115,7 +114,7 @@ deg_syn <- function (deg, syn, initial, D3_i){
 }
 
 # make_pools function 
-make_pools <- function(pool_names, syn, deg_old, deg_new, t0_abun){
+make_pools <- function(df, pool_names, syn, deg_old, deg_new, t0_abun){
   
   temp <- NULL
   df <- NULL
@@ -131,7 +130,7 @@ make_pools <- function(pool_names, syn, deg_old, deg_new, t0_abun){
       f_initial <- 0
     }
     
-    temp <- deg_syn(f_deg, f_syn, f_initial, 
+    temp <- deg_syn(df, f_deg, f_syn, f_initial, 
                     D3_i = as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)))
     
     df <- cbind(df, temp)
@@ -144,7 +143,7 @@ make_pools <- function(pool_names, syn, deg_old, deg_new, t0_abun){
 }
 
 # function for the distribution of all the isotopes within a pool 
-pool_iso_dist <- function (pool) {
+pool_iso_dist <- function (df, pool) {
   
   isos <- paste0("M_", seq(((as.numeric(gsub("^D3_([0-9]+)_.*", 
                                              "\\1", pool)))*3), 
@@ -153,7 +152,7 @@ pool_iso_dist <- function (pool) {
   temp <- NULL
   df <- NULL
   for (i in 1:length(isos)){
-    temp <- mod[, pool] * nat_iso[i, "per_total"]
+    temp <- df[, pool] * nat_iso[i, "per_total"]
     df <- cbind(df, temp)
   }
   
@@ -164,13 +163,13 @@ pool_iso_dist <- function (pool) {
 }
 
 # function to get make an individual isotope distribution for each pool
-all_isos <- function(pool_cols){
+all_isos <- function(dat, pool_cols){
   
   temp <- NULL
   df <- NULL
   
   for (pools in pool_cols){
-    temp <- pool_iso_dist(pools)
+    temp <- pool_iso_dist(dat, pools)
     df <- cbind(df, temp)
   }
   return(df)
