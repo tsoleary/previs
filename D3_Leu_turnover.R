@@ -270,6 +270,8 @@ model_turnover <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab,
     temp <- deg_syn(df, f_deg, f_syn, f_initial, 
                     D3_i = as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)))
     
+    D3_i <- D3_i = as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool))
+    
     deg_syn <- function (df, deg, syn, initial, D3_i){
       
       temp <- NULL
