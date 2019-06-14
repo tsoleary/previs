@@ -150,6 +150,7 @@ aa_for <- read.csv("aa_molecular_formula.csv")
 model_turnover <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, 
                             time = 0:168){
   
+  # reference data frame with molecular formulas of all amino acids
   aa_form <- data.frame("letter" = c("A", "R", "N", "D", "C", "Q", "E", "G", 
                                      "H", "I", "L", "K", "M", "F", "P", "S", 
                                      "T", "W", "Y", "V"),
@@ -164,6 +165,7 @@ model_turnover <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab,
                                                 "C4H9NO3", "C11H12N2O2", 
                                                 "C9H11NO3", "C5H11NO2"))
     
+  # distribution of pools based on the number of labeled leucines
   L <- str_count(peptide, pattern = "L")
   isos <- 0:L
   p <- per_lab
@@ -173,8 +175,8 @@ model_turnover <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab,
     temp <- (factorial(L)/(factorial(L-i)*factorial(i)))*(p^i)*(1-p)^(L-i)
     D3_pep_dist <- c(D3_pep_dist, temp)
   }
-    
   
+  # coverting the primary sequence of the peptide into a total molecular formula
   pep_length <- nchar(peptide)
   pep_bond <- pep_length - 1
   
@@ -192,28 +194,24 @@ model_turnover <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab,
   }
   
   pep_tot <- getMolecule(mols)$formula
-  
-  element <- function(formula){
-    # pattern to match the initial element assumes element starts with an upper 
-    # case and optional lower case followed by zero or more digits.
-    first <- "^([[:upper:]][[:lower:]]?)([0-9]*).*"
-    # inverse of above to remove the initial element
-    last <- "^[[:upper:]][[:lower:]]?[0-9]*(.*)"
-    result <- list()
-    extract <- formula
-    # repeat as long as there is data
-    while ((start <- nchar(extract)) > 0){
-      chem <- sub(first, '\\1 \\2', extract)
-      extract <- sub(last, '\\1', extract)
-      # if the number of characters is the same, then there was an error
-      if (nchar(extract) == start){
-        warning("Invalid formula:", formula)
-        return(NULL)
-      }
-      # append to the list
-      result[[length(result) + 1L]] <- strsplit(chem, ' ')[[1]]
+  # pattern to match the initial element assumes element starts with an upper 
+  # case and optional lower case followed by zero or more digits.
+  first <- "^([[:upper:]][[:lower:]]?)([0-9]*).*"
+  # inverse of above to remove the initial element
+  last <- "^[[:upper:]][[:lower:]]?[0-9]*(.*)"
+  result <- list()
+  extract <- pep_tot
+  # repeat as long as there is data
+  while ((start <- nchar(extract)) > 0){
+    chem <- sub(first, '\\1 \\2', extract)
+    extract <- sub(last, '\\1', extract)
+    # if the number of characters is the same, then there was an error
+    if (nchar(extract) == start){
+      warning("Invalid formula:", formula)
+      return(NULL)
     }
-    result
+    # append to the list
+    result[[length(result) + 1L]] <- strsplit(chem, ' ')[[1]]
   }
   
   ans <- unlist(element(pep_tot))
@@ -255,7 +253,83 @@ model_turnover <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab,
   
   mod <- data.frame("time" = time)
   
+  temp <- NULL
+  df <- NULL
+  
+  for (pool in pool_names){
+    if (grepl("old", pool) == TRUE){
+      f_syn <- 0
+      f_deg <- deg_old
+      f_initial <- t0_abun
+    } else {
+      f_syn <- syn
+      f_deg <- deg_new
+      f_initial <- 0
+    }
+    
+    temp <- deg_syn(df, f_deg, f_syn, f_initial, 
+                    D3_i = as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)))
+    
+    deg_syn <- function (df, deg, syn, initial, D3_i){
+      
+      temp <- NULL
+      list <- NULL
+      D3_syn <- syn * D3_pep_dist[D3_i + 1]
+      
+      for (i in 1:((nrow(df) - 1))){
+        if (is.null(temp) == TRUE){
+          temp <- initial
+          list<- c(temp)
+        }
+        temp <- temp - (temp * deg) + D3_syn
+        list <- c(list, temp)
+      }
+      return(list)
+    }
+    
+    df <- cbind(df, temp)
+  }
+  
+  colnames(df) <- pool_names
+  
   mod <- cbind(mod, make_pools(pool_names, syn, deg_old, deg_new, t0_abun))
+  
+  all_isos <- function(dat, pool_cols){
+    
+    temp <- NULL
+    df <- NULL
+    
+    for (pools in pool_cols){
+      temp <- pool_iso_dist(dat, pools)
+      
+      pool_iso_dist <- function (df, pool) {
+        
+        isos <- paste0("M_", seq(((as.numeric(gsub("^D3_([0-9]+)_.*", 
+                                                   "\\1", pool)))*3), 
+                                 by = 1, length = 9))
+        
+        temp <- NULL
+        df <- NULL
+        for (i in 1:length(isos)){
+          temp <- df[, pool] * nat_iso[i, "per_total"]
+          df <- cbind(df, temp)
+        }
+        
+        
+        colnames(df) <- paste(str_replace(pool, "_pool", ""), isos, sep = "_")
+        
+        return(df)
+      }
+      
+      
+      
+      
+      df <- cbind(df, temp)
+    }
+    return(df)
+  }
+  
+  
   
   mod <- cbind(mod, all_isos(colnames(mod)[grep("pool", colnames(mod))]))
   
@@ -289,10 +363,7 @@ x <- str_pad(gsub("M_", "", y), 2, pad = "0")
 
 sort(x)
 
-# now I need to condense and organize all the parts. possible make a separate
-# script to have all the functions on
-
-# then need to figure out how to work backwards to get the M_0 corrected values etc
+# need to figure out how to work backwards to get the M_0 corrected values etc
 
 
 
