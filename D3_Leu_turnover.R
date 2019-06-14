@@ -108,43 +108,43 @@ aa_for <- read.csv("aa_molecular_formula.csv")
 
 # initial conditions -----------------------------------------------------------
 
-# # peptide specific
-# peptide <- "SAMPLLER"
-# D3_pep_dist <- iso_dist(peptide, p = 0.5)
-# 
-# # natural isotopic distribution of the peptide
-# nat_iso <- pep_iso(peptide, charge = 1)
-# 
-# # initial total abundance at T0
-# t0_abun <- 1000
-# 
-# # rates
-# deg_old <- 0.0500
-# deg_new <- 0.0500
-# syn <- 50
-# 
-# # length of time
-# time <- 0:168
+# peptide specific
+peptide <- "SAMPLLER"
+D3_pep_dist <- iso_dist(peptide, p = 0.5)
+
+# natural isotopic distribution of the peptide
+nat_iso <- pep_iso(peptide, charge = 1)
+
+# initial total abundance at T0
+t0_abun <- 1000
+
+# rates
+deg_old <- 0.0500
+deg_new <- 0.0500
+syn <- 50
+
+# length of time
+time <- 0:168
 
 # model data frame -------------------------------------------------------------
 
-# mod <- data.frame("time" = time)
-# 
-# pool_names <- c("D3_0_old_pool", "D3_0_new_pool", 
-#                 paste("D3", 1:(length(D3_pep_dist) - 1), "pool", sep = "_"))
-# 
-# pool_df <- make_pools(pool_names, syn = 50, deg_old = 0.05, 
-#                       deg_new = 0.05, t0_abun = 1000)
-# 
-# mod <- cbind(mod, pool_df)
-# 
-# mod <- cbind(mod, pool_iso_dist("D3_0_old_pool"))
-# 
-# pool_cols <- colnames(mod)[grep("pool", colnames(mod))]
-# 
-# df_all_isos <- all_isos(pool_cols)
-# 
-# mod <- cbind(mod, df_all_isos)
+mod <- data.frame("time" = time)
+
+pool_names <- c("D3_0_old_pool", "D3_0_new_pool",
+                paste("D3", 1:(length(D3_pep_dist) - 1), "pool", sep = "_"))
+
+pool_df <- make_pools(mod, pool_names, syn = 50, deg_old = 0.05,
+                      deg_new = 0.05, t0_abun = 1000)
+
+mod <- cbind(mod, pool_df)
+
+mod <- cbind(mod, pool_iso_dist("D3_0_old_pool"))
+
+pool_cols <- colnames(mod)[grep("pool", colnames(mod))]
+
+df_all_isos <- all_isos(pool_cols)
+
+mod <- cbind(mod, df_all_isos)
 
 # total function 
 model_turnover <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, 

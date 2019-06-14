@@ -25,6 +25,21 @@ pep_iso <- function (pep, max_iso = 9, charge = 1){
     aa_sep <- c(aa_sep, aa)
   }
   
+  # reference data frame with molecular formulas of all amino acids
+  aa_form <- data.frame("letter" = c("A", "R", "N", "D", "C", "Q", "E", "G", 
+                                     "H", "I", "L", "K", "M", "F", "P", "S", 
+                                     "T", "W", "Y", "V"),
+                        "molecular_formula" = c("C3H7NO2", "C6H14N4O2", 
+                                                "C4H8N2O3", "C4H7NO4", 
+                                                "C3H7NO2S", "C5H10N2O3", 
+                                                "C5H9NO4", "C2H5NO2", 
+                                                "C6H9N3O2", "C6H13NO2", 
+                                                "C6H13NO2", "C6H14N2O2", 
+                                                "C5H11NO2S", "C9H11NO2", 
+                                                "C5H9NO2", "C3H7NO3", 
+                                                "C4H9NO3", "C11H12N2O2", 
+                                                "C9H11NO3", "C5H11NO2"))
+  
   mols <- NULL
   for (j in 1:length(aa_sep)){
     row <- grep(aa_sep[j], aa_form$letter)
