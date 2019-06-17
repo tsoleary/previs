@@ -132,60 +132,7 @@ mod <- mega_model("SAMPLLER", deg_old = 0.05, deg_new = 0.05, syn = 50,
                   t0_abun = 1000, per_lab = 0.5, time = c(0:168))
 
 
-# need to create a function that combines all individual isotopes into one total
 
-mutate(mod, sum = colnames(mod)[grep("M_0", colnames(mod))], sum)
-
-
-
-df_test <- mod
-colnames(df_test) <- gsub("^.*(M_[0-9]+)", "\\1", colnames(df_test))
-
-mod_comb <- sapply(split.default(df_test, colnames(df_test)), 
-                   rowSums, na.rm = TRUE)
-
-
-y <- colnames(mod_comb)
-
-
-# combine the individual isotopomers from different pools back to a total 
-combine_iso <- function (dat){
-  
-  # removes the M_ from each column name?
-  colnames(dat) <- gsub("^.*(M_[0-9]+)", "\\1", colnames(dat))
-  
-  # combine all columns that have the same name by their 
-  df <- sapply(split.default(dat, colnames(dat)), 
-                     rowSums, na.rm = TRUE)
-  
-  # add the word total to every colname with a M_0 pattern
-  colnames(df) <- gsub("^.*(M_[0-9]+)", 
-                             paste0("\\1", "_total"), colnames(df))  
-  
-  # remove pook and time from the df
-  df <- df[, grep(c("M_"), colnames(df))]
-  
-  # pading with a 0 to allow sorting of the columns 
-  colnames(df) <- str_pad(gsub("M_", "", colnames(df)), 8, pad = "0")
-  
-  df <- df[, sort(colnames(df))]
-  
-  colnames(df) <- c(paste0("M_", colnames(df)))
-                    
-  return(df)
-  
-}
-
-
-
-
-
-# the columns come out of order because it is lexographic indexing not numerical
-# need to pad the numbers with a 0
-
-xy <- str_pad(gsub("M_", "", colnames(x)), 8, pad = "0")
-
-sort(x)
 
 # need to figure out how to work backwards to get the M_0 corrected values etc
 
