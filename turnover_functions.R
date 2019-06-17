@@ -129,7 +129,7 @@ deg_syn <- function (df, deg, syn, initial, D3_i){
 }
 
 # make_pools function 
-make_pools <- function(df, pool_names, syn, deg_old, deg_new, t0_abun){
+make_pools <- function(dat, pool_names, syn, deg_old, deg_new, t0_abun){
   
   temp <- NULL
   df <- NULL
@@ -145,7 +145,7 @@ make_pools <- function(df, pool_names, syn, deg_old, deg_new, t0_abun){
       f_initial <- 0
     }
     
-    temp <- deg_syn(df, f_deg, f_syn, f_initial, 
+    temp <- deg_syn(dat, f_deg, f_syn, f_initial, 
                     D3_i = as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)))
     
     df <- cbind(df, temp)
@@ -158,11 +158,13 @@ make_pools <- function(df, pool_names, syn, deg_old, deg_new, t0_abun){
 }
 
 # function for the distribution of all the isotopes within a pool 
-pool_iso_dist <- function (df, pool) {
+pool_iso_dist <- function (df, pool, peptide) {
   
   isos <- paste0("M_", seq(((as.numeric(gsub("^D3_([0-9]+)_.*", 
                                              "\\1", pool)))*3), 
                            by = 1, length = 9))
+  
+  nat_iso <- pep_iso(peptide)
   
   temp <- NULL
   df <- NULL

@@ -341,6 +341,46 @@ model_turnover <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab,
 
 x <- model_turnover("SAMPLLER", 0.05, 0.05, 50, 1000, 0.50)
 
+# organize all functions so that none of them reference the global environment
+# then just make a mega-function that draws on all the other previous functions
+
+mega_model <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, time){
+  
+  # maybe try redefining some variables if they aren't working in functions later on
+  # i.e. f_deg_old <- deg_old etc.
+  
+  # create a data frame with a specified length of time 
+  mod <- data.frame("time" = time)
+  
+  # define the number of D3 Leucines that will be in the peptide and their 
+  # proportional syntheis rates based on the percent labeling 
+  D3_pep_dist <- iso_dist(peptide, p = per_lab)
+  
+  # define the pool names to be used as an argument in the make pools function
+  pool_names <- c("D3_0_old_pool", "D3_0_new_pool",
+                  paste("D3", 1:(length(D3_pep_dist) - 1), "pool", sep = "_"))
+  
+  # make pools for all 
+  pool_df <- make_pools(mod, pool_names, syn, deg_old, deg_new, t0_abun)
+  
+  # cbind to the data frame with the time vector
+  mod <- cbind(mod, pool_df)
+  
+  # find the colnames of mod that are pools
+  pool_cols <- colnames(mod)[grep("pool", colnames(mod))]
+  
+  # create a data frame with all isotopes for each pool
+  df_all_isos <- all_isos(pool_cols)
+  
+  # cbind all columns together
+  mod <- cbind(mod, df_all_isos)
+  
+  return(mod)
+  
+}
+
+mega_model()
+
 
 
 # need to create a function that combines all individual isotopes into one total
