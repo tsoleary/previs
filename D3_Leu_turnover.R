@@ -346,9 +346,6 @@ x <- model_turnover("SAMPLLER", 0.05, 0.05, 50, 1000, 0.50)
 
 mega_model <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, time){
   
-  # maybe try redefining some variables if they aren't working in functions later on
-  # i.e. f_deg_old <- deg_old etc.
-  
   # create a data frame with a specified length of time 
   mod <- data.frame("time" = time)
   
@@ -366,11 +363,8 @@ mega_model <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, time){
   # cbind to the data frame with the time vector
   mod <- cbind(mod, pool_df)
   
-  # find the colnames of mod that are pools
-  pool_cols <- colnames(mod)[grep("pool", colnames(mod))]
-  
   # create a data frame with all isotopes for each pool
-  df_all_isos <- all_isos(pool_cols)
+  df_all_isos <- all_isos(mod, pool_names, peptide)
   
   # cbind all columns together
   mod <- cbind(mod, df_all_isos)
@@ -379,7 +373,7 @@ mega_model <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, time){
   
 }
 
-mega_model()
+y <- mega_model("SAMPLLER", .05, .05, 50, 1000, .5, c(0:168))
 
 
 

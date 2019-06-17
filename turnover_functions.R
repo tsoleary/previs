@@ -158,7 +158,7 @@ make_pools <- function(dat, pool_names, syn, deg_old, deg_new, t0_abun){
 }
 
 # function for the distribution of all the isotopes within a pool 
-pool_iso_dist <- function (df, pool, peptide) {
+pool_iso_dist <- function (dat, pool, peptide) {
   
   isos <- paste0("M_", seq(((as.numeric(gsub("^D3_([0-9]+)_.*", 
                                              "\\1", pool)))*3), 
@@ -169,10 +169,9 @@ pool_iso_dist <- function (df, pool, peptide) {
   temp <- NULL
   df <- NULL
   for (i in 1:length(isos)){
-    temp <- df[, pool] * nat_iso[i, "per_total"]
+    temp <- dat[, pool] * nat_iso[i, "per_total"]
     df <- cbind(df, temp)
   }
-  
   
   colnames(df) <- paste(str_replace(pool, "_pool", ""), isos, sep = "_")
   
@@ -180,13 +179,13 @@ pool_iso_dist <- function (df, pool, peptide) {
 }
 
 # function to get make an individual isotope distribution for each pool
-all_isos <- function(dat, pool_cols){
+all_isos <- function(dat, pool_cols, peptide){
   
   temp <- NULL
   df <- NULL
   
   for (pools in pool_cols){
-    temp <- pool_iso_dist(dat, pools)
+    temp <- pool_iso_dist(dat, pools, peptide)
     df <- cbind(df, temp)
   }
   return(df)
