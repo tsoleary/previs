@@ -191,3 +191,33 @@ all_isos <- function(dat, pool_cols, peptide){
   return(df)
 }
 
+# mega model creating the whole thing so it is one line of code
+mega_model <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, time){
+  
+  # create a data frame with a specified length of time 
+  mod <- data.frame("time" = time)
+  
+  # define the number of D3 Leucines that will be in the peptide and their 
+  # proportional syntheis rates based on the percent labeling 
+  D3_pep_dist <- iso_dist(peptide, p = per_lab)
+  
+  # define the pool names to be used as an argument in the make pools function
+  pool_names <- c("D3_0_old_pool", "D3_0_new_pool",
+                  paste("D3", 1:(length(D3_pep_dist) - 1), "pool", sep = "_"))
+  
+  # make pools for all 
+  pool_df <- make_pools(mod, pool_names, syn, deg_old, deg_new, t0_abun)
+  
+  # cbind to the data frame with the time vector
+  mod <- cbind(mod, pool_df)
+  
+  # create a data frame with all isotopes for each pool
+  df_all_isos <- all_isos(mod, pool_names, peptide)
+  
+  # cbind all columns together
+  mod <- cbind(mod, df_all_isos)
+  
+  return(mod)
+  
+}
+
