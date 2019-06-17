@@ -176,7 +176,8 @@ combine_iso <- function (dat){
   
 }
 
-xy <- combine_iso(mod)
+
+
 
 
 # the columns come out of order because it is lexographic indexing not numerical
