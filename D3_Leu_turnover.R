@@ -133,7 +133,6 @@ mod <- mega_model("SAMPLLER", deg_old = 0.05, deg_new = 0.05, syn = 50,
 
 
 
-
 # need to figure out how to work backwards to get the M_0 corrected values etc
 
 

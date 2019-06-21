@@ -111,11 +111,11 @@ pep_iso <- function (pep, max_iso = 9, charge = 1){
 }
 
 # deg_syn function
-deg_syn <- function (df, deg, syn, initial, D3_i){
+deg_syn <- function (df, deg, syn, initial, D3_pep, D3_i){
   
   temp <- NULL
   list <- NULL
-  D3_syn <- syn * D3_pep_dist[D3_i + 1]
+  D3_syn <- syn * D3_pep[D3_i + 1]
   
   for (i in 1:((nrow(df) - 1))){
     if (is.null(temp) == TRUE){
@@ -129,7 +129,7 @@ deg_syn <- function (df, deg, syn, initial, D3_i){
 }
 
 # make_pools function 
-make_pools <- function(dat, pool_names, syn, deg_old, deg_new, t0_abun){
+make_pools <- function(dat, pool_names, syn, deg_old, deg_new, t0_abun, D3_pep){
   
   temp <- NULL
   df <- NULL
@@ -145,7 +145,7 @@ make_pools <- function(dat, pool_names, syn, deg_old, deg_new, t0_abun){
       f_initial <- 0
     }
     
-    temp <- deg_syn(dat, f_deg, f_syn, f_initial, 
+    temp <- deg_syn(dat, f_deg, f_syn, f_initial, D3_pep,
                     D3_i = as.numeric(gsub("^D3_([0-9]+)_.*", "\\1", pool)))
     
     df <- cbind(df, temp)
@@ -234,7 +234,8 @@ mega_model <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, time){
                   paste("D3", 1:(length(D3_pep_dist) - 1), "pool", sep = "_"))
   
   # make pools for all 
-  pool_df <- make_pools(mod, pool_names, syn, deg_old, deg_new, t0_abun)
+  pool_df <- make_pools(mod, pool_names, syn, deg_old, deg_new, t0_abun, 
+                        D3_pep_dist)
   
   # cbind to the data frame with the time vector
   mod <- cbind(mod, pool_df)
