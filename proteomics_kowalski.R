@@ -22,40 +22,12 @@ by_group <- function (dat, col, FUN = median) {
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
 # set the max number of peptides used in analysis
-max_pep <- 10000
+max_pep <- 100000
 
 data <-
   tbl_df(data_raw) %>%
   group_by(Master.Protein.Accessions) %>%
   top_n(n = max_pep, wt = ctrl_raw_med)
-
-# # proteins used for normalization
-# histones <- "B2RTM0"
-# 
-# norm_pro <- histones
-# 
-# norm_pep <- subset(data, data$Master.Protein.Accessions == norm_pro)
-# numeric_cols <- which(sapply(norm_pep, is.numeric) == TRUE)
-# raw_abun <- numeric_cols[-length(numeric_cols)]
-# norm_value <- sapply(norm_pep[, raw_abun], mean)
-# 
-# raw_abun_mat <- as.matrix(data[, raw_abun])
-# 
-# norm_abun <- t(t(raw_abun_mat)/norm_value)
-# colnames(norm_abun) <- paste(colnames(norm_abun), sep = "_", "norm")
-# norm_test <- as.data.frame(norm_abun)
-# data <- as_tibble(data)
-# data <- cbind(data, norm_test)
-
-# Median, sd, & ratio of peptides ----------------------------------------------
-
-# group1 <- grep("infected_norm", colnames(data))
-# group2 <- grep("HMM_norm", colnames(data))
-# ctrl <- grep("Control_norm", colnames(data))
-# 
-# data$group1_med <- by_group(data, group1)
-# data$group2_med <- by_group(data, group2)
-# data$ctrl_med <- by_group(data, ctrl)
 
 # Data frame with only top few ionizing peptides -------------------------------
 
@@ -82,7 +54,6 @@ by_protein <- function (dat, groups, FUN = mean){
   colnames(tab) <- groups
   return(tab)
 }
-
 
 protein <- by_protein(data_top, group_names) %>%
   as.data.frame %>%
@@ -114,8 +85,9 @@ min_pep <- 3
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-# convert protein data.frame to tidy data so we can do the plotting  
+# proteins changing over time --------------------------------------------------
 
+# convert protein data.frame to a tidy data.frame
 samples <- colnames(protein)[grep("F", colnames(protein))]
 
 df_tidy <- protein %>% 
@@ -123,92 +95,60 @@ df_tidy <- protein %>%
   separate("sample", c("file", "sex", "leg", "week"), sep = "_")
 
 # average together the duplicates in the same week
-df_avg <- df_tidy %>%
+df <- df_tidy %>%
   group_by(Master.Protein.Accessions, sex, leg, week) %>%
   summarize(abundance = mean(abundance, na.rm = TRUE))
 
-df_avg$week <- as.numeric(df_avg$week)
+df$week <- as.numeric(df$week)
 
-
-cor(df_avg$week, df_avg$abundance)
-
-df_avg %>%
-  group_by(Master.Protein.Accessions, sex, leg, week) %>%
-  summarize(corr = cor(df_avg$week, df_avg$abundance))
+df$group <- paste(df$Master.Protein.Accessions, df$sex, df$leg, sep = "_")
 
 
 # need to first make a plot of the whole thing
+ggplot(df, aes(x = week, y = abundance, group = group, color = leg)) +
+  geom_point(color = data$Master.Protein.Accessions) +
+  geom_smooth(lwd = 1, se = FALSE, method = "lm")
 
-ggplot(df_avg, aes(x = week, y = abundance)) +
-  geom_jitter() +
-  geom_smooth(lwd = 3, se = FALSE, method = "lm")
 
-ov_cor <- df_avg %>%
-    cor(df_avg$week, df_avg$abundance)
-
-gcor <- df_avg %>%
-    group_by(Master.Protein.Accessions, leg) %>%
-    summarize(correlation = cor(week, abundance))
-
+# get the slope and intercept
 lin_fit <- function(dat) {
-  the_fit <- lm(dat$abundance ~ I(dat$week), dat)
+  the_fit <- lm(dat$abundance ~ dat$week, dat)
   setNames(data.frame(t(coef(the_fit))), c("intercept", "slope"))
 }
 
+# get the slope and intercept and pvalue
+lin_fit2 <- function(dat) {
+  fit <- lm(dat$abundance ~ dat$week, dat)
+  result <- c(fit$coefficients[1], fit$coefficients[2], anova(fit)$'Pr(>F)'[1])
+  setNames(result, c("intercept", "slope", "p_value"))
+}
+
+# apply that function to each subgroup
+df_s_i2 <- df %>%
+          group_by(Master.Protein.Accessions, sex, leg) %>%
+          do(lin_fit2(.))
 
 
-gfits_me <- df_avg %>%
-  group_by(Master.Protein.Accessions, leg) %>% 
-  do(lin_fit(.))
+# rsquared value
+df_r2 <- df %>%
+          group_by(Master.Protein.Accessions, sex, leg) %>%
+          summarize(correlation = cor(week, abundance) ^ 2)
 
-gfits_me <- df_avg %>%
-  group_by(Master.Protein.Accessions, leg) %>%
-  do(cor(df_avg$week, df_avg$abundance))
+df_linear <- full_join(df_s_i, df_r2, by = c("Master.Protein.Accessions" = 
+                       "Master.Protein.Accessions", 
+                       "sex" = "sex", "leg" = "leg"))
+
+df_linear$group <- paste(df_linear$Master.Protein.Accessions, 
+                         df_linear$sex, df_linear$leg, sep = "_")
+
+ggplot()
+
+
+
+
 
 # great site to help http://stat545.com/block023_dplyr-do.html
 
-
-# spreads out to columns by week
-df <- as.data.frame(spread(df_avg, "week", "abundance"))
-
-
-
-
-
-
-
-
-# plot the 
-pro <- as.character(unique(df$Master.Protein.Accessions))
-
-for (i in 1:length(pro)){
-  
-  temp <- filter(df, Master.Protein.Accessions == pro[i])
-  
-  pep <- as.character(unique(temp$peptide))
-  
-  for (pep_x in pep){
-    
-    temp_pep <- filter(temp, peptide == pep_x)
-    
-    cols <- c(grep(c("01"), colnames(temp_pep)),
-              grep(c("02"), colnames(temp_pep)))
-    
-    for (j in cols){
-      
-      g1 <- ggplot(data = temp_pep) +
-        geom_point(mapping = aes(x = hrs, 
-                                 y = as.numeric(temp_pep[, colnames(temp_pep)[j]]), 
-                                 color = Group), 
-                   size = 3, alpha = 0.8) + 
-        labs(title = paste(pro[i], pep_x, sep = " -- "), 
-             subtitle = colnames(temp_pep)[j],
-             y = "Abundance", x = "Time (Weeks)") +
-        theme_classic()
-      plot(g1)
-    }
-  }
-}
 
 
 
