@@ -102,21 +102,20 @@ for (col in isotopes){
   df[, paste(col, "hist_norm", sep = "_")] <- df[, col] / df$hist_avg
 }
 
+
+
+
+
 # Mega Model -------------------------------------------------------------------
 
-aa_for <- read.csv("aa_molecular_formula.csv")
-
-# initial conditions -----------------------------------------------------------
-
-# peptide specific
-peptide <- "SAMPLLER"
-D3_pep_dist <- iso_dist(peptide, p = 0.5)
-
-# natural isotopic distribution of the peptide
-nat_iso <- pep_iso(peptide, charge = 1)
+# initial conditions
+peptide <- "SAMPLLLLLLER"
 
 # initial total abundance at T0
 t0_abun <- 1000
+
+# fraction of labeled Leucine in the media 
+per_lab <- 0.50
 
 # rates
 deg_old <- 0.0500
@@ -128,9 +127,7 @@ time <- 0:168
 
 # model data frame -------------------------------------------------------------
 
-mod <- mega_model("SAMPLLER", deg_old = 0.05, deg_new = 0.05, syn = 50, 
-                  t0_abun = 1000, per_lab = 0.5, time = c(0:168))
-
+mod <- mega_model(peptide, deg_old, deg_new, syn, t0_abun, per_lab, time)
 
 
 # need to figure out how to work backwards to get the M_0 corrected values etc
