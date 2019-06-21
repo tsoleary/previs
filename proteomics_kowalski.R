@@ -4,7 +4,7 @@ library(tidyverse)
 
 setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 data_raw <- 
-  read.csv("Kowalski_F_3_LandR_w1_trial_all_peptides.csv")
+  read.csv("Kowalski_reprex_all_peptides.csv")
 
 # Normalization ----------------------------------------------------------------
 
@@ -22,7 +22,7 @@ by_group <- function (dat, col, FUN = median) {
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
 # set the max number of peptides used in analysis
-max_pep <- 1000
+max_pep <- 10000
 
 data <-
   tbl_df(data_raw) %>%
@@ -114,4 +114,102 @@ min_pep <- 3
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-write.csv(protein, "kowalski_trial_run_r.csv")
+# convert protein data.frame to tidy data so we can do the plotting  
+
+samples <- colnames(protein)[grep("F", colnames(protein))]
+
+df_tidy <- protein %>% 
+  gather(sample, abundance, samples) %>%
+  separate("sample", c("file", "sex", "leg", "week"), sep = "_")
+
+# average together the duplicates in the same week
+df_avg <- df_tidy %>%
+  group_by(Master.Protein.Accessions, sex, leg, week) %>%
+  summarize(abundance = mean(abundance, na.rm = TRUE))
+
+df_avg$week <- as.numeric(df_avg$week)
+
+
+cor(df_avg$week, df_avg$abundance)
+
+df_avg %>%
+  group_by(Master.Protein.Accessions, sex, leg, week) %>%
+  summarize(corr = cor(df_avg$week, df_avg$abundance))
+
+
+# need to first make a plot of the whole thing
+
+ggplot(df_avg, aes(x = week, y = abundance)) +
+  geom_jitter() +
+  geom_smooth(lwd = 3, se = FALSE, method = "lm")
+
+ov_cor <- df_avg %>%
+    cor(df_avg$week, df_avg$abundance)
+
+gcor <- df_avg %>%
+    group_by(Master.Protein.Accessions, leg) %>%
+    summarize(correlation = cor(week, abundance))
+
+lin_fit <- function(dat) {
+  the_fit <- lm(dat$abundance ~ I(dat$week), dat)
+  setNames(data.frame(t(coef(the_fit))), c("intercept", "slope"))
+}
+
+
+
+gfits_me <- df_avg %>%
+  group_by(Master.Protein.Accessions, leg) %>% 
+  do(lin_fit(.))
+
+gfits_me <- df_avg %>%
+  group_by(Master.Protein.Accessions, leg) %>%
+  do(cor(df_avg$week, df_avg$abundance))
+
+# great site to help http://stat545.com/block023_dplyr-do.html
+
+
+# spreads out to columns by week
+df <- as.data.frame(spread(df_avg, "week", "abundance"))
+
+
+
+
+
+
+
+
+# plot the 
+pro <- as.character(unique(df$Master.Protein.Accessions))
+
+for (i in 1:length(pro)){
+  
+  temp <- filter(df, Master.Protein.Accessions == pro[i])
+  
+  pep <- as.character(unique(temp$peptide))
+  
+  for (pep_x in pep){
+    
+    temp_pep <- filter(temp, peptide == pep_x)
+    
+    cols <- c(grep(c("01"), colnames(temp_pep)),
+              grep(c("02"), colnames(temp_pep)))
+    
+    for (j in cols){
+      
+      g1 <- ggplot(data = temp_pep) +
+        geom_point(mapping = aes(x = hrs, 
+                                 y = as.numeric(temp_pep[, colnames(temp_pep)[j]]), 
+                                 color = Group), 
+                   size = 3, alpha = 0.8) + 
+        labs(title = paste(pro[i], pep_x, sep = " -- "), 
+             subtitle = colnames(temp_pep)[j],
+             y = "Abundance", x = "Time (Weeks)") +
+        theme_classic()
+      plot(g1)
+    }
+  }
+}
+
+
+
+
