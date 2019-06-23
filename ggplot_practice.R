@@ -45,10 +45,12 @@ ggplot(data = mpg) +
 # how to get a different linear regression for each class
 lin_fit <- function(dat){
   the_fit <- lm(dat$hwy ~ dat$displ, dat)
-  setNames(data.frame(t(coef(the_fit))), c("intercept", "slope"))
+  p_val <- anova(the_fit)$'Pr(>F)'[1]
+  slo_int <- data.frame(t(coef(the_fit)))
+  result <- cbind(slo_int, p_val)
+  colnames(result) <- c("intercept", "slope", "p_value")
+  return(result)
 }
-
-setNames(data.frame(t(coef(lm(hwy ~ displ, mpg))), summary(the_fit)$p_value), c("intercept", "slope"))
 
 mpg2 <- mpg %>%
   group_by(manufacturer, class) %>%
