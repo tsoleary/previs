@@ -47,13 +47,18 @@ lin_fit <- function(dat){
   the_fit <- lm(dat$hwy ~ dat$displ, dat)
   p_val <- anova(the_fit)$'Pr(>F)'[1]
   slo_int <- data.frame(t(coef(the_fit)))
-  result <- cbind(slo_int, p_val)
-  colnames(result) <- c("intercept", "slope", "p_value")
+  r_sq <- summary(the_fit)$r.squared
+  result <- cbind(slo_int, r_sq, p_val)
+  colnames(result) <- c("intercept", "slope", "r_squared", "p_value")
   return(result)
 }
 
 mpg2 <- mpg %>%
-  group_by(manufacturer, class) %>%
+  group_by(class) %>%
   do(lin_fit(.))
 
+
+mpg3 <- mpg %>%
+  group_by(manufacturer, class) %>%
+  do(lin_fit(.))
 
