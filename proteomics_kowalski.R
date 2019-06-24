@@ -158,83 +158,56 @@ ggplot(test, aes(x = week, y = abundance)) +
   
 # make this a function
 
-plot_pro <- function(dat, tle = pro){
+plot_pro <- function(dat, g_title = pro){
   g <- ggplot(dat, aes(x = week, y = abundance)) +
          geom_point(mapping = aes(x = week, y = abundance, fill = leg), 
                     alpha = 0.5, size = 3, pch = 21,  color = "black") +
-         labs(title = title, x = "Week", y = "Raw Abundance", fill = "Leg") +
+         labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
+         expand_limits(x = 0, y = 0) +
          theme_classic()
   return(g)
 }
 
-plot_pro(Myh2, title = pro)
+xy <- plot_pro(df_mybpc1_q, g_title = "Neil")
 
+lm(df_mybpc1_q)
 
 
 # make a loop to make multiple plots
-
-pros <- c("Q3UIJ3; P60710; P68134", "Q3UIJ3; P68134", "P07310", 
-          "Q5SX40; Q5SX39; G3UW82", "Q5SX40; P13541; Q5SX39; B1AR69", 
-          "P05977", "Q5SX39", "Q5SX40; P13541; Q5SX39; G3UW82", "B1AR69", 
-          "P68134", "Q5SX40; P13541; Q5SX39; G3UW82; B1AR69", "P97457", 
-          "P58774; Q545Y3", "A6ZI44", "A0A0A0MQF6", "Q5SX40; Q5SX39", 
-          "Q5SX39; G3UW82", "Q5SX40; P13541; Q5SX39", 
-          "Q5SX40; Q5SX39; G3UW82; B1AR69", "Q8R429", "P21550", 
-          "E9Q8K5; A2ASS6", "Q7TPR4", "Q9JI91", "Q9JI91; Q7TPR4", 
-          "O88990", "O88990; Q7TPR4", "O88990; Q9JI91", 
-          "O88990; Q9JI91; Q7TPR4")
-
-
-
-
-x <- df$Master.Protein.Accessions == "neil"
-
-sum(x)
-
-list_nots <- NULL
-
-for (pro in pros){
-  
-  temp <- df$Master.Protein.Accessions == pro
-  sum_temp <- sum(temp)
-  if(sum_temp == 0){
-    list_nots <- c(list_nots, pro)
-    
-  }
-}
-
-
-list_ares <- NULL
-
-for (pro in pros){
-  
-  temp <- df$Master.Protein.Accessions == pro
-  sum_temp <- sum(temp)
-  if(sum_temp != 0){
-    list_ares <- c(list_ares, pro)
-    
-  }
-}
-
 
 pros <-  c("P07310", "Q5SX40; Q5SX39; G3UW82", "P05977", "Q5SX39", "P68134", 
            "P97457", "A6ZI44", "A0A0A0MQF6", "Q5SX40; Q5SX39", "Q5SX39; G3UW82", 
            "Q8R429", "P21550", "E9Q8K5; A2ASS6", "Q7TPR4", "Q9JI91", "O88990", 
            "O88990; Q9JI91", "O88990; Q9JI91; Q7TPR4")
 
-
-
+# make function that will convert accession to gene for each graph :)-----------
+# indiv_mpa_to_gene <- function (dat, gene_dat){
+#   dat$gene <- dat$Master.Protein.Accessions
+#   for (i in 1:nrow(dat)){
+#     temp <- which(dat$gene[i] == gene_dat$Accession, TRUE)
+#     if (length(temp) == 1){
+#       dat$gene <- gsub(dat$gene[i], gene_dat$Gene[temp], dat$gene)
+#     }
+#   }
+#   return(dat$gene)
+# }
 
 
 
 for (pro in pros){
+  
   temp_df <- filter(df, Master.Protein.Accessions == pro)
   
-  g <- plot_pro(temp_df)
+  g <- plot_pro(temp_df, g_title = pro)
   
   plot(g)
+  
 }
 
 
-length(unique(pros))
+
+
+
+
+
 
