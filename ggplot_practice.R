@@ -62,3 +62,24 @@ mpg3 <- mpg %>%
   group_by(manufacturer, class) %>%
   do(lin_fit(.))
 
+
+mpg %>% 
+  nest(-drv) %>% 
+  mutate(model = map(data, ~ lm(hwy~displ, data = .x)),
+         adj.r.squared = map_dbl(model, ~ signif(summary(.x)$adj.r.squared, 5)),
+         intercept = map_dbl(model, ~ signif(.x$coef[[1]],5)),
+         slope = map_dbl(model, ~ signif(.x$coef[[2]], 5)),
+         pvalue = map_dbl(model, ~ signif(summary(.x)$coef[2,4], 5)) 
+  ) %>% 
+  select(-data, -model) %>% 
+  left_join(mpg) %>% 
+  
+  ggplot(aes(displ, hwy)) +
+  geom_point() +
+  geom_smooth(se = FALSE, method = "lm") +
+  facet_wrap(~drv) +
+  geom_text(aes(3, 40, label = paste("Adj R2 = ", adj.r.squared, "\n",
+                                     "Intercept =",intercept, "\n",
+                                     "Slope =", slope, "\n",
+                                     "P =", pvalue)))
+

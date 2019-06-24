@@ -140,24 +140,34 @@ df_fit <- df %>%
 # throw gene names into df_fit
 df_fit$gene <- mpa_to_gene(df_fit, gene_df)
 
-# filter 
-df_mybpc1 <- filter(df, gene == "Mybpc1")
+# filter for learning
+df_g <- filter(df, Master.Protein.Accessions == "G0YZM8")
 
-df_mybpc1_g <- filter(df, Master.Protein.Accessions == "G0YZM8")
-
-df_mybpc1_q <- filter(df, Master.Protein.Accessions == "Q6P6L5")
-
-test <- filter(df, Master.Protein.Accessions == "Q3UIJ3; P68134")
 
 # need to first make a plot of the whole thing
-ggplot(test, aes(x = week, y = abundance)) +
+ggplot(df_g, aes(x = week, y = abundance)) +
   geom_point(mapping = aes(x = week, y = abundance, fill = leg), 
-              alpha = 0.5, size = 3, pch = 21,  color = "black") +
-  labs(title = "Q3UIJ3; P68134", x = "Week", y = "Raw Abundance", fill = "Leg") +
-  theme_classic()
-  
-# make this a function
+             alpha = 0.5, size = 3, pch = 21,  color = "black") +
+  labs(title = "Neil", x = "Week", y = "Raw Abundance", fill = "Leg") +
+  theme_classic() +
+  expand_limits(x = 0, y = 0) +
+  geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
+              size = 1.75, show.legend = FALSE, linetype = "dotted")
 
+
+# for showing the equation line later...... 
+# coeff=coefficients(reg)
+# # Equation of the line : 
+# eq = paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1))
+# # Plot
+# sp + geom_abline(intercept = 37, slope = -5)+
+#   ggtitle(eq)
+# # Change line type, color and size
+# sp + geom_abline(intercept = 37, slope = -5, color="red", 
+#                  linetype="dashed", size=1.5)+
+#   ggtitle(eq)
+
+# make this a function
 plot_pro <- function(dat, g_title = pro){
   g <- ggplot(dat, aes(x = week, y = abundance)) +
          geom_point(mapping = aes(x = week, y = abundance, fill = leg), 
@@ -168,10 +178,9 @@ plot_pro <- function(dat, g_title = pro){
   return(g)
 }
 
-xy <- plot_pro(df_mybpc1_q, g_title = "Neil")
+xy <- plot_pro(df_g, g_title = "Neil")
 
-lm(df_mybpc1_q)
-
+xy + abline(lm(abundance ~ week, df_g))
 
 # make a loop to make multiple plots
 
@@ -203,11 +212,4 @@ for (pro in pros){
   plot(g)
   
 }
-
-
-
-
-
-
-
 
