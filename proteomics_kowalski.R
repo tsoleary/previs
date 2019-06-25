@@ -154,6 +154,8 @@ df_med <- df_tidy %>%
   group_by(Master.Protein.Accessions, sex, leg, week) %>%
   summarize(abundance = median(abundance, na.rm = TRUE))
 
+df_med <- df_med[!is.na(df_med$abundance), ]
+
 # need to first make a plot of the whole thing
 ggplot(df, aes(x = week, y = abundance)) +
   geom_jitter(mapping = aes(x = week, y = abundance, fill = leg), 
@@ -266,7 +268,6 @@ for (pro in pros){
 
 plot_list <- list()
 
-
 for (pro in pros){
   
   gene <- indiv_mpa_to_gene(pro, protein)
@@ -279,7 +280,7 @@ for (pro in pros){
   
 }
 
-pdf("plot.test.pdf", width = 10.75, height = 6)
+pdf("plots.pdf", width = 10.75, height = 6)
 
 for(pro in pros){
   print(plot_list[[pro]])
@@ -288,3 +289,13 @@ for(pro in pros){
 dev.off()
 
 ################################################################################
+
+
+pros <- unique(df_med$Master.Protein.Accessions)
+
+
+# to remove proteins that don't have data in both legs! this just works on the first occurance?
+df_med <- df_med %>%
+  group_by(Master.Protein.Accessions, sex) %>%
+  filter(., length(unique(leg)) > 1)
+
