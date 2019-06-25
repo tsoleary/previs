@@ -1,6 +1,6 @@
 # Proteomic analysis: Data imported from Proteome Discoverer 2.2 ---------------
 
-library(tidyverse)
+library("tidyverse")
 
 setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 data_raw <- 
@@ -20,6 +20,34 @@ by_group <- function (dat, col, FUN = median) {
 }
 
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
+
+# set the max number of peptides used in analysis
+max_pep <- 15
+
+data <-
+  tbl_df(data_raw) %>%
+  group_by(Master.Protein.Accessions) %>%
+  top_n(n = max_pep, wt = ctrl_raw_med)
+
+
+# proteins used for normalization
+histones <- "B2RTM0"
+
+norm_pro <- histones
+
+norm_pep <- subset(data, data$Master.Protein.Accessions == norm_pro)
+numeric_cols <- which(sapply(norm_pep, is.numeric) == TRUE)
+raw_abun <- numeric_cols[-length(numeric_cols)]
+norm_value <- sapply(norm_pep[, raw_abun], mean, na.rm = TRUE)
+
+raw_abun_mat <- as.matrix(data[, raw_abun])
+
+norm_abun <- t(t(raw_abun_mat)/norm_value)
+colnames(norm_abun) <- paste(colnames(norm_abun), sep = "_", "norm")
+norm_test <- as.data.frame(norm_abun)
+data <- as_tibble(data)
+data <- cbind(data, norm_test)
+
 
 # sum of every column 
 
