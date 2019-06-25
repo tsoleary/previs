@@ -21,13 +21,18 @@ by_group <- function (dat, col, FUN = median) {
 
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
-# # set the max number of peptides used in analysis
-# max_pep <- 100000
-# 
-# data <-
-#   tbl_df(data_raw) %>%
-#   group_by(Master.Protein.Accessions) %>%
-#   top_n(n = max_pep, wt = ctrl_raw_med)
+# sum of every column 
+
+norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
+
+raw_abun_mat <- as.matrix(data_raw[, ctrl_raw])
+
+norm_abun <- t(t(raw_abun_mat)/norm_value)
+colnames(norm_abun) <- paste(colnames(norm_abun), sep = "_", "norm")
+norm_test <- as.data.frame(norm_abun)
+data_raw <- as_tibble(data_raw)
+data <- cbind(data_raw, norm_test)
+
 
 # Data frame with only top few ionizing peptides -------------------------------
 
@@ -40,7 +45,7 @@ data_top <-
 
 # Protein Averages -------------------------------------------------------------
 
-group_names <- colnames(data_top)[grep("F", colnames(data))]
+group_names <- colnames(data_top)[grep("norm", colnames(data))]
 
 by_protein <- function (dat, groups, FUN = mean){
   tab <- NULL
@@ -85,7 +90,7 @@ min_pep <- 3
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-write.csv(protein, "kowalski_F_w1_w8_no_norm_r.csv")
+write.csv(protein, "kowalski_F_w1_w8_norm_to_sum_total_r.csv")
 
 
 
@@ -93,8 +98,11 @@ write.csv(protein, "kowalski_F_w1_w8_no_norm_r.csv")
 ################################################################################
 # proteins changing over time --------------------------------------------------
 
-protein <- read.csv("kowalski_F_w1_w8_no_norm_r.csv")
-protein$X <- NULL
+# protein <- read.csv("kowalski_F_w1_w8_norm_to_sum_total_r.csv")
+# protein$X <- NULL
+
+colnames(protein) <- gsub("_norm", "", colnames(protein))
+colnames(protein) <- gsub("_Sample", "", colnames(protein))
 
 # convert protein data.frame to a tidy data.frame
 samples <- colnames(protein)[grep("F", colnames(protein))]
@@ -103,12 +111,20 @@ df_tidy <- protein %>%
   gather(sample, abundance, samples) %>%
   separate("sample", c("file", "leg", "sex", "week"), sep = "_")
 
-# average together the duplicates in the same week
+df_tidy$week <- as.numeric(df_tidy$week)
+
+#remove the NA's
+df_tidy <- df_tidy[!is.na(df$abundance), ]
+
+# mean together the duplicates in the same week
 df <- df_tidy %>%
   group_by(Master.Protein.Accessions, sex, leg, week) %>%
   summarize(abundance = mean(abundance, na.rm = TRUE))
 
-df$week <- as.numeric(df$week)
+# median together the duplicates in the same week
+df_med <- df_tidy %>%
+  group_by(Master.Protein.Accessions, sex, leg, week) %>%
+  summarize(abundance = median(abundance, na.rm = TRUE))
 
 df$gene <- mpa_to_gene(df, gene_df)
 
@@ -137,14 +153,12 @@ df_fit <- df %>%
   group_by(Master.Protein.Accessions, sex, leg) %>%
   do(lin_fit(.))
 
-# throw gene names into df_fit
 df_fit$gene <- mpa_to_gene(df_fit, gene_df)
 
 # filter for learning
 df_g <- filter(df, Master.Protein.Accessions == "G0YZM8")
 
-
-# need to first make a plot of the whole thing
+# PLOT
 ggplot(df_g, aes(x = week, y = abundance)) +
   geom_point(mapping = aes(x = week, y = abundance, fill = leg), 
              alpha = 0.5, size = 3, pch = 21,  color = "black") +
@@ -152,62 +166,46 @@ ggplot(df_g, aes(x = week, y = abundance)) +
   theme_classic() +
   expand_limits(x = 0, y = 0) +
   geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
-              size = 1.75, show.legend = FALSE, linetype = "dotted")
+              size = 1.1, show.legend = FALSE, linetype = "dotted")
 
-
-# for showing the equation line later...... 
-# coeff=coefficients(reg)
-# # Equation of the line : 
-# eq = paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1))
-# # Plot
-# sp + geom_abline(intercept = 37, slope = -5)+
-#   ggtitle(eq)
-# # Change line type, color and size
-# sp + geom_abline(intercept = 37, slope = -5, color="red", 
-#                  linetype="dashed", size=1.5)+
-#   ggtitle(eq)
-
-# make this a function
-plot_pro <- function(dat, g_title = pro){
+# plot_pro function
+plot_pro <- function(dat, g_title, FUN = geom_point){
   g <- ggplot(dat, aes(x = week, y = abundance)) +
-         geom_point(mapping = aes(x = week, y = abundance, fill = leg), 
-                    alpha = 0.5, size = 3, pch = 21,  color = "black") +
+         FUN(mapping = aes(x = week, y = abundance, fill = leg), 
+             alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
          labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
          expand_limits(x = 0, y = 0) +
-         theme_classic()
+         theme_classic() +  
+         expand_limits(x = 0, y = 0) +
+         geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
+                     size = 1.1, show.legend = FALSE, linetype = "dotted")
   return(g)
 }
 
-xy <- plot_pro(df_g, g_title = "Neil")
+plot_pro(df_g, g_title = "Neil")
 
-xy + abline(lm(abundance ~ week, df_g))
 
 # make a loop to make multiple plots
-
 pros <-  c("P07310", "Q5SX40; Q5SX39; G3UW82", "P05977", "Q5SX39", "P68134", 
            "P97457", "A6ZI44", "A0A0A0MQF6", "Q5SX40; Q5SX39", "Q5SX39; G3UW82", 
            "Q8R429", "P21550", "E9Q8K5; A2ASS6", "Q7TPR4", "Q9JI91", "O88990", 
            "O88990; Q9JI91", "O88990; Q9JI91; Q7TPR4")
 
+
 # make function that will convert accession to gene for each graph :)-----------
-# indiv_mpa_to_gene <- function (dat, gene_dat){
-#   dat$gene <- dat$Master.Protein.Accessions
-#   for (i in 1:nrow(dat)){
-#     temp <- which(dat$gene[i] == gene_dat$Accession, TRUE)
-#     if (length(temp) == 1){
-#       dat$gene <- gsub(dat$gene[i], gene_dat$Gene[temp], dat$gene)
-#     }
-#   }
-#   return(dat$gene)
-# }
-
-
+indiv_mpa_to_gene <- function (Acc_pro, gene_dat){
+  temp <- which(Acc_pro == gene_dat$Master.Protein.Accessions, TRUE)
+  gene <- gsub(Acc_pro, gene_dat$gene[temp], Acc_pro)
+  return(gene)
+}
 
 for (pro in pros){
   
-  temp_df <- filter(df, Master.Protein.Accessions == pro)
+  gene <- indiv_mpa_to_gene(pro, protein)
   
-  g <- plot_pro(temp_df, g_title = pro)
+  temp_df <- filter(df_tidy, Master.Protein.Accessions == pro)
+  
+  g <- plot_pro(temp_df, g_title = gene, FUN = geom_jitter)
   
   plot(g)
   

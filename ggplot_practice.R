@@ -62,8 +62,6 @@ mpg3 <- mpg %>%
   group_by(manufacturer, class) %>%
   do(lin_fit(.))
 
-
-<<<<<<< HEAD
 # add the regression line equation to the plot ---------------------------------
 
 
@@ -128,7 +126,6 @@ p <- ggplot(data = df, aes(x = x, y = y)) +
 p
 
 
-=======
 mpg %>% 
   nest(-drv) %>% 
   mutate(model = map(data, ~ lm(hwy~displ, data = .x)),
@@ -148,5 +145,44 @@ mpg %>%
                                      "Intercept =",intercept, "\n",
                                      "Slope =", slope, "\n",
                                      "P =", pvalue)))
->>>>>>> d77aa3fd236d7375f0899d467ec484fb1b5f1893
+
+
+
+library(ggplot2)
+
+df <- data.frame(x = c(1:100))
+df$y <- 2 + 3 * df$x + rnorm(100, sd = 40)
+m <- lm(y ~ x, data = df)
+
+summary(m)
+p_value <-  anova(m)$"Pr(>F)"[1]
+
+# function to create the text equation
+lm_eqn <- function(df, lm_object) {
+  eq <-
+    substitute(
+      italic(y) == a + b %.% italic(x) * "," ~  ~ italic(r) ^ 2 ~ "=" ~ r2,
+      list(
+        a = as.character(signif(coef(lm_object)[1], digits = 2)),
+        b = as.character(signif(coef(lm_object)[2], digits = 2)),
+        r2 = as.character(signif(summary(lm_object)$r.squared, digits = 3)),
+        p = as.character(signif(p_value, digits = 2))
+      )
+    )
+  as.character(as.expression(eq))
+}
+
+# get the equation object in a format for use in ggplot2
+eqn <- lm_eqn(df, m)
+
+# plot everything
+ggplot(data = df, aes(x = x, y = y)) +
+  geom_smooth(method = "lm", formula = y ~ x) +
+  geom_point() +
+  annotate("text",
+           x = 25,
+           y = 325, 
+           label = eqn,
+           parse = TRUE) +
+  theme_minimal()
 
