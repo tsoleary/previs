@@ -62,3 +62,69 @@ mpg3 <- mpg %>%
   group_by(manufacturer, class) %>%
   do(lin_fit(.))
 
+
+# add the regression line equation to the plot ---------------------------------
+
+
+df <- data.frame(x = c(1:100))
+
+df$y <- 2 + 3 * df$x + rnorm(100, sd = 40)
+
+m <- lm(y ~ x, data = df)
+
+p <- ggplot(data = df, aes(x = x, y = y)) +
+  
+  geom_smooth(method = "lm", formula = y ~ x) +
+  
+  geom_point()
+
+p
+
+
+
+eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,
+                 
+                 list(        a = format(coef(m)[1], digits = 4),
+                              
+                              b = format(coef(m)[2], digits = 4),
+                              
+                              r2 = format(summary(m)$r.squared, digits = 3)))
+
+
+
+dftext <- data.frame(x = 70, y = 50, eq = as.character(as.expression(eq)))
+
+p + geom_text(aes(label = eq), data = dftext, parse = TRUE)
+
+
+# --- maybe better as function https://stackoverflow.com/questions/7549694/adding-regression-line-equation-and-r2-on-graph
+lm_eqn <- function(df){
+  m <- lm(y ~ x, df);
+  eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+                   list(a = format(coef(m)[1], digits = 2),
+                        b = format(coef(m)[2], digits = 2),
+                        r2 = format(summary(m)$r.squared, digits = 3)))
+  as.character(as.expression(eq));
+}
+
+p1 <- p + geom_text(x = 25, y = 300, label = lm_eqn(df), parse = TRUE)
+
+p1
+
+
+# this one seems to work better than the others
+
+library(ggpmisc)
+df <- data.frame(x = c(1:100))
+df$y <- 2 + 3 * df$x + rnorm(100, sd = 40)
+my.formula <- y ~ x
+p <- ggplot(data = df, aes(x = x, y = y)) +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+  stat_poly_eq(formula = my.formula, 
+               aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+               parse = TRUE) +         
+  geom_point()
+p
+
+
+
