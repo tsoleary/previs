@@ -49,17 +49,17 @@ data <- as_tibble(data)
 data <- cbind(data, norm_test)
 
 
-# sum of every column 
-
-norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
-
-raw_abun_mat <- as.matrix(data_raw[, ctrl_raw])
-
-norm_abun <- t(t(raw_abun_mat)/norm_value)
-colnames(norm_abun) <- paste(colnames(norm_abun), sep = "_", "norm")
-norm_test <- as.data.frame(norm_abun)
-data_raw <- as_tibble(data_raw)
-data <- cbind(data_raw, norm_test)
+# # sum of every column 
+# 
+# norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
+# 
+# raw_abun_mat <- as.matrix(data_raw[, ctrl_raw])
+# 
+# norm_abun <- t(t(raw_abun_mat)/norm_value)
+# colnames(norm_abun) <- paste(colnames(norm_abun), sep = "_", "norm")
+# norm_test <- as.data.frame(norm_abun)
+# data_raw <- as_tibble(data_raw)
+# data <- cbind(data_raw, norm_test)
 
 
 # Data frame with only top few ionizing peptides -------------------------------
@@ -118,7 +118,7 @@ min_pep <- 3
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-write.csv(protein, "kowalski_F_w1_w8_norm_to_sum_total_r.csv")
+write.csv(protein, "kowalski_F_w1_w8_hist_norm__total_r.csv")
 
 
 
@@ -142,7 +142,7 @@ df_tidy <- protein %>%
 df_tidy$week <- as.numeric(df_tidy$week)
 
 #remove the NA's
-df_tidy <- df_tidy[!is.na(df$abundance), ]
+df_tidy <- df_tidy[!is.na(df_tidy$abundance), ]
 
 # mean together the duplicates in the same week
 df <- df_tidy %>%
@@ -154,16 +154,10 @@ df_med <- df_tidy %>%
   group_by(Master.Protein.Accessions, sex, leg, week) %>%
   summarize(abundance = median(abundance, na.rm = TRUE))
 
-df$gene <- mpa_to_gene(df, gene_df)
-
-#remove the NA's
-df <- df[!is.na(df$abundance), ]
-
 # need to first make a plot of the whole thing
 ggplot(df, aes(x = week, y = abundance)) +
   geom_jitter(mapping = aes(x = week, y = abundance, fill = leg), 
               alpha = 0.5, size = 3, pch = 21,  color = "black")
-
 
 # get the slope and intercept
 lin_fit <- function(dat){
@@ -204,8 +198,7 @@ lm_eqn <- function(lm_object) {
       list(
         a = as.character(signif(coef(lm_object)[1], digits = 2)),
         b = as.character(signif(coef(lm_object)[2], digits = 2)),
-        r2 = as.character(signif(summary(lm_object)$r.squared, digits = 3)),
-        p = as.character(signif(p_value, digits = 2))
+        r2 = as.character(signif(summary(lm_object)$r.squared, digits = 3))
       )
     )
   as.character(as.expression(eq))
@@ -232,16 +225,14 @@ plot_pro <- function(dat, g_title, FUN = geom_point){
     expand_limits(x = 0, y = 0) +
     geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
                 size = 1.1, show.legend = FALSE, linetype = "dotted") +
-    annotate("text", x = 10, y = 0.75*(max(dat$abundance)), 
+    annotate("text", x = 9.5, y = 0.75*(max(dat$abundance)), 
              label = eqn_l, parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 10, y = 0.25*(max(dat$abundance)), 
+    annotate("text", x = 9.5, y = 0.25*(max(dat$abundance)), 
              label = eqn_r, parse = TRUE, color = "#53D3D7") +
     coord_cartesian(xlim = c(0, 8), clip = 'off') +
     theme(plot.margin = unit(c(1, 8, 1, 1), "lines"))
   return(g)
 }
-
-plot_pro(df_g, "???", FUN = geom_jitter)
 
 
 # make a loop to make multiple plots
@@ -262,7 +253,7 @@ for (pro in pros){
   
   gene <- indiv_mpa_to_gene(pro, protein)
   
-  temp_df <- filter(df, Master.Protein.Accessions == pro)
+  temp_df <- filter(df_med, Master.Protein.Accessions == pro)
   
   g <- plot_pro(temp_df, g_title = gene, FUN = geom_jitter)
   
@@ -270,3 +261,30 @@ for (pro in pros){
   
 }
 
+
+################################################################################
+
+plot_list <- list()
+
+
+for (pro in pros){
+  
+  gene <- indiv_mpa_to_gene(pro, protein)
+  
+  temp_df <- filter(df_med, Master.Protein.Accessions == pro)
+  
+  g <- plot_pro(temp_df, g_title = gene, FUN = geom_jitter)
+  
+  plot_list[[pro]] <- g
+  
+}
+
+pdf("plot.test.pdf", width = 10.75, height = 6)
+
+for(pro in pros){
+  print(plot_list[[pro]])
+}
+
+dev.off()
+
+################################################################################
