@@ -182,3 +182,82 @@ ggplot(data = df, aes(x = x, y = y)) +
   annotate("text", x = 25, y = 325, label = eqn, parse = TRUE, color = "blue") +
   theme_minimal()
 
+
+# plot function that adds the linear eqn ---------------------------------------
+
+
+# function to get the regression eqn
+lm_eqn <- function(lm_object) {
+  eq <-
+    substitute(
+      italic(y) == a + b %.% italic(x),
+      list(
+        a = as.character(signif(coef(lm_object)[1], digits = 2)),
+        b = as.character(signif(coef(lm_object)[2], digits = 2))
+      )
+    )
+  r <- 
+    substitute(
+      italic(r) ^ 2 ~ "=" ~ r2,
+      list(
+        r2 = as.character(signif(summary(lm_object)$r.squared, digits = 3))
+      )
+    )
+  p <-  
+    substitute(
+      italic("p-val") ~ "=" ~ pval,
+      list(
+        pval = as.character(signif(anova(lm_object)$'Pr(>F)'[1], digits = 3))
+      )
+    )
+  result <- c(as.character(as.expression(eq)), as.character(as.expression(r)),
+              as.character(as.expression(p)))
+  return(result)
+}
+
+
+# plot_pro function
+plot_pro <- function(dat, g_title, FUN = geom_point){
+  
+  df_l <- filter(dat, drv == "f")
+  df_r <- filter(dat, drv == "r")
+  
+  lm_l <- lm(hwy ~ displ, df_l)
+  lm_r <- lm(hwy ~ displ, df_r)
+  
+  eqn_l <- lm_eqn(lm_l)
+  eqn_r <- lm_eqn(lm_r)
+  
+  g <- ggplot(dat, aes(x = displ, y = hwy)) +
+    FUN(mapping = aes(x = displ, y = hwy, fill = drv), 
+        alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
+    labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
+    expand_limits(x = 0, y = 0) +
+    theme_classic() +  
+    expand_limits(x = 0, y = 0) +
+    geom_smooth(mapping = aes(color = drv), method = 'lm', se = FALSE, 
+                size = 1.1, show.legend = FALSE, linetype = "dotted") +
+    annotate("text", x = 9.5, y = 0.75*(max(dat$hwy)), 
+             label = eqn_l[1], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = 9.5, y = 0.70*(max(dat$hwy)), 
+             label = eqn_l[2], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = 9.5, y = 0.63*(max(dat$hwy)), 
+             label = eqn_l[3], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = 9.5, y = 0.25*(max(dat$hwy)), 
+             label = eqn_r[1], parse = TRUE, color = "#53D3D7") +
+    annotate("text", x = 9.5, y = 0.20*(max(dat$hwy)), 
+             label = eqn_r[2], parse = TRUE, color = "#53D3D7") +
+    annotate("text", x = 9.5, y = 0.13*(max(dat$hwy)), 
+             label = eqn_r[3], parse = TRUE, color = "#53D3D7") +
+    coord_cartesian(xlim = c(0, 7), clip = 'off') +
+    theme(plot.margin = unit(c(1, 8, 1, 1), "lines"))
+  return(g)
+}
+
+plot_pro(mpg1, "??", FUN = geom_jitter)
+
+
+
+
+
+
