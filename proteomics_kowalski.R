@@ -168,73 +168,11 @@ ggplot(df_g, aes(x = week, y = abundance)) +
   geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
               size = 1.1, show.legend = FALSE, linetype = "dotted")
 
-# plot_pro function
-plot_pro <- function(dat, g_title, FUN = geom_point){
-  g <- ggplot(dat, aes(x = week, y = abundance)) +
-         FUN(mapping = aes(x = week, y = abundance, fill = leg), 
-             alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
-         labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
-         expand_limits(x = 0, y = 0) +
-         theme_classic() +  
-         expand_limits(x = 0, y = 0) +
-         geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
-                     size = 1.1, show.legend = FALSE, linetype = "dotted")
-  return(g)
-}
-
-plot_pro(df_g, g_title = "Neil")
-
-
-################################################################################
-
-# plot_pro function
-plot_pro <- function(dat, g_title, FUN = geom_point){
-  
-  df_l <- filter(dat, leg == "L")
-  df_r <- filter(dat, leg == "R")
-  
-  lm_l <- lm(abundance ~ week, df_l)
-  lm_r <- lm(abundance ~ week, df_r)
-  
-  g <- ggplot(dat, aes(x = week, y = abundance)) +
-    FUN(mapping = aes(x = week, y = abundance, fill = leg), 
-        alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
-    labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
-    expand_limits(x = 0, y = 0) +
-    theme_classic() +  
-    expand_limits(x = 0, y = 0) +
-    geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
-                size = 1.1, show.legend = FALSE, linetype = "dotted")
-  return(g)
-}
-
-# plot
-  
-0.75*(max(df_g$abundance))
-0.25*(max(df_g$abundance))
-
-
-df_l <- filter(df_g, leg == "L")
-df_r <- filter(df_g, leg == "R")
-    
-lm_l <- lm(abundance ~ week, df_l)
-lm_r <- lm(abundance ~ week, df_r)
-    
-ggplot(df_g, aes(x = week, y = abundance)) +
-  geom_jitter(mapping = aes(x = week, y = abundance, fill = leg), 
-      alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
-  labs(title = "g_title", x = "Week", y = "Raw Abundance", fill = "Leg") +
-  expand_limits(x = 0, y = 0) +
-  theme_classic() +  
-  expand_limits(x = 0, y = 0) +
-  geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
-              size = 1.1, show.legend = FALSE, linetype = "dotted")
-
-
+# function to get the regression eqn
 lm_eqn <- function(lm_object) {
   eq <-
     substitute(
-      italic(y) == a + b %.% italic(x) * "\n" ~ italic(r) ^ 2 ~ "=" ~ r2,
+      italic(y) == a + b %.% italic(x) * "," ~ ~ italic(r) ^ 2 ~ "=" ~ r2,
       list(
         a = as.character(signif(coef(lm_object)[1], digits = 2)),
         b = as.character(signif(coef(lm_object)[2], digits = 2)),
@@ -245,40 +183,38 @@ lm_eqn <- function(lm_object) {
   as.character(as.expression(eq))
 }
 
-lm_rsq <- function(lm_object) {
-  eq <-
-    substitute(
-      italic(r) ^ 2 ~ "=" ~ r2,
-      list(
-        r2 = as.character(signif(summary(lm_object)$r.squared, digits = 3))
-      )
-    )
-  as.character(as.expression(eq))
+# plot_pro function
+plot_pro <- function(dat, g_title, FUN = geom_point){
+  
+  df_l <- filter(dat, leg == "L")
+  df_r <- filter(dat, leg == "R")
+  
+  lm_l <- lm(abundance ~ week, df_l)
+  lm_r <- lm(abundance ~ week, df_r)
+  
+  eqn_l <- lm_eqn(lm_l)
+  eqn_r <- lm_eqn(lm_r)
+  
+  g <- ggplot(dat, aes(x = week, y = abundance)) +
+    FUN(mapping = aes(x = week, y = abundance, fill = leg), 
+                alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
+    labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
+    expand_limits(x = 0, y = 0) +
+    theme_classic() +  
+    expand_limits(x = 0, y = 0) +
+    geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
+                size = 1.1, show.legend = FALSE, linetype = "dotted") +
+    annotate("text", x = 10, y = 0.75*(max(dat$abundance)), 
+             label = eqn_l, parse = TRUE, color = "#F98B86") +
+    annotate("text", x = 10, y = 0.25*(max(dat$abundance)), 
+             label = eqn_r, parse = TRUE, color = "#53D3D7") +
+    coord_cartesian(xlim = c(0, 8), clip = 'off') +
+    theme(plot.margin = unit(c(1, 8, 1, 1), "lines"))
+  return(g)
 }
 
-eqn_l <- lm_eqn(lm_l)
-eqn_l_rsq <- lm_rsq(lm_r)
-eqn_r <- lm_eqn(lm_r)
+plot_pro(df_g, "???", FUN = geom_jitter)
 
-ggplot(df_g, aes(x = week, y = abundance)) +
-  geom_jitter(mapping = aes(x = week, y = abundance, fill = leg), 
-              alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
-  labs(title = "g_title", x = "Week", y = "Raw Abundance", fill = "Leg") +
-  expand_limits(x = 0, y = 0) +
-  theme_classic() +  
-  expand_limits(x = 0, y = 0) +
-  geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
-              size = 1.1, show.legend = FALSE, linetype = "dotted") +
-  annotate("text", x = 10, y = 0.75*(max(df_g$abundance)), 
-           label = eqn_l, parse = TRUE, color = "#F98B86") +
-  annotate("text", x = 10, y = 0.25*(max(df_g$abundance)), 
-           label = eqn_r, parse = TRUE, color = "#53D3D7") +
-  coord_cartesian(xlim = c(0, 8), clip = 'off') +
-  theme(plot.margin = unit(c(1, 8, 1, 1), "lines"))
-
-
-
-################################################################################
 
 # make a loop to make multiple plots
 pros <-  c("P07310", "Q5SX40; Q5SX39; G3UW82", "P05977", "Q5SX39", "P68134", 
@@ -287,7 +223,7 @@ pros <-  c("P07310", "Q5SX40; Q5SX39; G3UW82", "P05977", "Q5SX39", "P68134",
            "O88990; Q9JI91", "O88990; Q9JI91; Q7TPR4")
 
 
-# make function that will convert accession to gene for each graph :)-----------
+# convert accession to gene for each graph -------------------------------------
 indiv_mpa_to_gene <- function (Acc_pro, gene_dat){
   temp <- which(Acc_pro == gene_dat$Master.Protein.Accessions, TRUE)
   gene <- gsub(Acc_pro, gene_dat$gene[temp], Acc_pro)
@@ -298,7 +234,7 @@ for (pro in pros){
   
   gene <- indiv_mpa_to_gene(pro, protein)
   
-  temp_df <- filter(df_tidy, Master.Protein.Accessions == pro)
+  temp_df <- filter(df, Master.Protein.Accessions == pro)
   
   g <- plot_pro(temp_df, g_title = gene, FUN = geom_jitter)
   
