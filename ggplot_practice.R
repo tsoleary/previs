@@ -158,7 +158,7 @@ summary(m)
 p_value <-  anova(m)$"Pr(>F)"[1]
 
 # function to create the text equation
-lm_eqn <- function(df, lm_object) {
+lm_eqn <- function(lm_object) {
   eq <-
     substitute(
       italic(y) == a + b %.% italic(x) * "," ~  ~ italic(r) ^ 2 ~ "=" ~ r2,
@@ -173,16 +173,12 @@ lm_eqn <- function(df, lm_object) {
 }
 
 # get the equation object in a format for use in ggplot2
-eqn <- lm_eqn(df, m)
+eqn <- lm_eqn(m)
 
 # plot everything
 ggplot(data = df, aes(x = x, y = y)) +
   geom_smooth(method = "lm", formula = y ~ x) +
   geom_point() +
-  annotate("text",
-           x = 25,
-           y = 325, 
-           label = eqn,
-           parse = TRUE) +
+  annotate("text", x = 25, y = 325, label = eqn, parse = TRUE, color = "blue") +
   theme_minimal()
 

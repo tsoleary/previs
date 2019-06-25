@@ -185,6 +185,101 @@ plot_pro <- function(dat, g_title, FUN = geom_point){
 plot_pro(df_g, g_title = "Neil")
 
 
+################################################################################
+
+# plot_pro function
+plot_pro <- function(dat, g_title, FUN = geom_point){
+  
+  df_l <- filter(dat, leg == "L")
+  df_r <- filter(dat, leg == "R")
+  
+  lm_l <- lm(abundance ~ week, df_l)
+  lm_r <- lm(abundance ~ week, df_r)
+  
+  g <- ggplot(dat, aes(x = week, y = abundance)) +
+    FUN(mapping = aes(x = week, y = abundance, fill = leg), 
+        alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
+    labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
+    expand_limits(x = 0, y = 0) +
+    theme_classic() +  
+    expand_limits(x = 0, y = 0) +
+    geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
+                size = 1.1, show.legend = FALSE, linetype = "dotted")
+  return(g)
+}
+
+# plot
+  
+0.75*(max(df_g$abundance))
+0.25*(max(df_g$abundance))
+
+
+df_l <- filter(df_g, leg == "L")
+df_r <- filter(df_g, leg == "R")
+    
+lm_l <- lm(abundance ~ week, df_l)
+lm_r <- lm(abundance ~ week, df_r)
+    
+ggplot(df_g, aes(x = week, y = abundance)) +
+  geom_jitter(mapping = aes(x = week, y = abundance, fill = leg), 
+      alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
+  labs(title = "g_title", x = "Week", y = "Raw Abundance", fill = "Leg") +
+  expand_limits(x = 0, y = 0) +
+  theme_classic() +  
+  expand_limits(x = 0, y = 0) +
+  geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
+              size = 1.1, show.legend = FALSE, linetype = "dotted")
+
+
+lm_eqn <- function(lm_object) {
+  eq <-
+    substitute(
+      italic(y) == a + b %.% italic(x) * "\n" ~ italic(r) ^ 2 ~ "=" ~ r2,
+      list(
+        a = as.character(signif(coef(lm_object)[1], digits = 2)),
+        b = as.character(signif(coef(lm_object)[2], digits = 2)),
+        r2 = as.character(signif(summary(lm_object)$r.squared, digits = 3)),
+        p = as.character(signif(p_value, digits = 2))
+      )
+    )
+  as.character(as.expression(eq))
+}
+
+lm_rsq <- function(lm_object) {
+  eq <-
+    substitute(
+      italic(r) ^ 2 ~ "=" ~ r2,
+      list(
+        r2 = as.character(signif(summary(lm_object)$r.squared, digits = 3))
+      )
+    )
+  as.character(as.expression(eq))
+}
+
+eqn_l <- lm_eqn(lm_l)
+eqn_l_rsq <- lm_rsq(lm_r)
+eqn_r <- lm_eqn(lm_r)
+
+ggplot(df_g, aes(x = week, y = abundance)) +
+  geom_jitter(mapping = aes(x = week, y = abundance, fill = leg), 
+              alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
+  labs(title = "g_title", x = "Week", y = "Raw Abundance", fill = "Leg") +
+  expand_limits(x = 0, y = 0) +
+  theme_classic() +  
+  expand_limits(x = 0, y = 0) +
+  geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
+              size = 1.1, show.legend = FALSE, linetype = "dotted") +
+  annotate("text", x = 10, y = 0.75*(max(df_g$abundance)), 
+           label = eqn_l, parse = TRUE, color = "#F98B86") +
+  annotate("text", x = 10, y = 0.25*(max(df_g$abundance)), 
+           label = eqn_r, parse = TRUE, color = "#53D3D7") +
+  coord_cartesian(xlim = c(0, 8), clip = 'off') +
+  theme(plot.margin = unit(c(1, 8, 1, 1), "lines"))
+
+
+
+################################################################################
+
 # make a loop to make multiple plots
 pros <-  c("P07310", "Q5SX40; Q5SX39; G3UW82", "P05977", "Q5SX39", "P68134", 
            "P97457", "A6ZI44", "A0A0A0MQF6", "Q5SX40; Q5SX39", "Q5SX39; G3UW82", 
