@@ -4,7 +4,7 @@ library(tidyverse)
 
 setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 data_raw <- 
-  read.csv("Kowalski_reprex_all_peptides.csv")
+  read.csv("Kowalski_F_w1_w8_all_peptides.csv")
 
 # Normalization ----------------------------------------------------------------
 
@@ -21,13 +21,13 @@ by_group <- function (dat, col, FUN = median) {
 
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
-# set the max number of peptides used in analysis
-max_pep <- 100000
-
-data <-
-  tbl_df(data_raw) %>%
-  group_by(Master.Protein.Accessions) %>%
-  top_n(n = max_pep, wt = ctrl_raw_med)
+# # set the max number of peptides used in analysis
+# max_pep <- 100000
+# 
+# data <-
+#   tbl_df(data_raw) %>%
+#   group_by(Master.Protein.Accessions) %>%
+#   top_n(n = max_pep, wt = ctrl_raw_med)
 
 # Data frame with only top few ionizing peptides -------------------------------
 
@@ -40,7 +40,7 @@ data_top <-
 
 # Protein Averages -------------------------------------------------------------
 
-group_names <- colnames(data)[grep("F", colnames(data))]
+group_names <- colnames(data_top)[grep("F", colnames(data))]
 
 by_protein <- function (dat, groups, FUN = mean){
   tab <- NULL
@@ -64,7 +64,7 @@ protein$Master.Protein.Accessions <-
   as.character
 
 # Converting protein accession to gene symbol ----------------------------------
-gene_df <- read.csv('Kowalski_F_3_LandR_w1_trial_gene_names.csv')
+gene_df <- read.csv('Kowalski_F_w1_w8_gene_names.csv')
 
 mpa_to_gene <- function (dat, gene_dat){
   dat$gene <- dat$Master.Protein.Accessions
@@ -85,14 +85,23 @@ min_pep <- 3
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
+write.csv(protein, "kowalski_F_w1_w8_no_norm_r.csv")
+
+
+
+
+################################################################################
 # proteins changing over time --------------------------------------------------
+
+protein <- read.csv("kowalski_F_w1_w8_no_norm_r.csv")
+protein$X <- NULL
 
 # convert protein data.frame to a tidy data.frame
 samples <- colnames(protein)[grep("F", colnames(protein))]
 
 df_tidy <- protein %>% 
   gather(sample, abundance, samples) %>%
-  separate("sample", c("file", "sex", "leg", "week"), sep = "_")
+  separate("sample", c("file", "leg", "sex", "week"), sep = "_")
 
 # average together the duplicates in the same week
 df <- df_tidy %>%
@@ -101,55 +110,106 @@ df <- df_tidy %>%
 
 df$week <- as.numeric(df$week)
 
-df$group <- paste(df$Master.Protein.Accessions, df$sex, df$leg, sep = "_")
+df$gene <- mpa_to_gene(df, gene_df)
 
+#remove the NA's
+df <- df[!is.na(df$abundance), ]
 
 # need to first make a plot of the whole thing
-ggplot(df, aes(x = week, y = abundance, group = group, color = leg)) +
-  geom_point(color = data$Master.Protein.Accessions) +
-  geom_smooth(lwd = 1, se = FALSE, method = "lm")
+ggplot(df, aes(x = week, y = abundance)) +
+  geom_jitter(mapping = aes(x = week, y = abundance, fill = leg), 
+              alpha = 0.5, size = 3, pch = 21,  color = "black")
 
 
 # get the slope and intercept
-lin_fit <- function(dat) {
+lin_fit <- function(dat){
   the_fit <- lm(dat$abundance ~ dat$week, dat)
-  setNames(data.frame(t(coef(the_fit))), c("intercept", "slope"))
+  p_val <- anova(the_fit)$'Pr(>F)'[1]
+  slo_int <- data.frame(t(coef(the_fit)))
+  r_sq <- summary(the_fit)$r.squared
+  result <- cbind(slo_int, r_sq, p_val)
+  colnames(result) <- c("intercept", "slope", "r_squared", "p_value")
+  return(result)
 }
 
-# get the slope and intercept and pvalue
-lin_fit2 <- function(dat) {
-  fit <- lm(dat$abundance ~ dat$week, dat)
-  result <- c(fit$coefficients[1], fit$coefficients[2], anova(fit)$'Pr(>F)'[1])
-  setNames(result, c("intercept", "slope", "p_value"))
+# do that function to each subgroup
+df_fit <- df %>%
+  group_by(Master.Protein.Accessions, sex, leg) %>%
+  do(lin_fit(.))
+
+# throw gene names into df_fit
+df_fit$gene <- mpa_to_gene(df_fit, gene_df)
+
+# filter for learning
+df_g <- filter(df, Master.Protein.Accessions == "G0YZM8")
+
+
+# need to first make a plot of the whole thing
+ggplot(df_g, aes(x = week, y = abundance)) +
+  geom_point(mapping = aes(x = week, y = abundance, fill = leg), 
+             alpha = 0.5, size = 3, pch = 21,  color = "black") +
+  labs(title = "Neil", x = "Week", y = "Raw Abundance", fill = "Leg") +
+  theme_classic() +
+  expand_limits(x = 0, y = 0) +
+  geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
+              size = 1.75, show.legend = FALSE, linetype = "dotted")
+
+
+# for showing the equation line later...... 
+# coeff=coefficients(reg)
+# # Equation of the line : 
+# eq = paste0("y = ", round(coeff[2],1), "*x + ", round(coeff[1],1))
+# # Plot
+# sp + geom_abline(intercept = 37, slope = -5)+
+#   ggtitle(eq)
+# # Change line type, color and size
+# sp + geom_abline(intercept = 37, slope = -5, color="red", 
+#                  linetype="dashed", size=1.5)+
+#   ggtitle(eq)
+
+# make this a function
+plot_pro <- function(dat, g_title = pro){
+  g <- ggplot(dat, aes(x = week, y = abundance)) +
+         geom_point(mapping = aes(x = week, y = abundance, fill = leg), 
+                    alpha = 0.5, size = 3, pch = 21,  color = "black") +
+         labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
+         expand_limits(x = 0, y = 0) +
+         theme_classic()
+  return(g)
 }
 
-# apply that function to each subgroup
-df_s_i2 <- df %>%
-          group_by(Master.Protein.Accessions, sex, leg) %>%
-          do(lin_fit2(.))
+xy <- plot_pro(df_g, g_title = "Neil")
 
+xy + abline(lm(abundance ~ week, df_g))
 
-# rsquared value
-df_r2 <- df %>%
-          group_by(Master.Protein.Accessions, sex, leg) %>%
-          summarize(correlation = cor(week, abundance) ^ 2)
+# make a loop to make multiple plots
 
-df_linear <- full_join(df_s_i, df_r2, by = c("Master.Protein.Accessions" = 
-                       "Master.Protein.Accessions", 
-                       "sex" = "sex", "leg" = "leg"))
+pros <-  c("P07310", "Q5SX40; Q5SX39; G3UW82", "P05977", "Q5SX39", "P68134", 
+           "P97457", "A6ZI44", "A0A0A0MQF6", "Q5SX40; Q5SX39", "Q5SX39; G3UW82", 
+           "Q8R429", "P21550", "E9Q8K5; A2ASS6", "Q7TPR4", "Q9JI91", "O88990", 
+           "O88990; Q9JI91", "O88990; Q9JI91; Q7TPR4")
 
-df_linear$group <- paste(df_linear$Master.Protein.Accessions, 
-                         df_linear$sex, df_linear$leg, sep = "_")
-
-ggplot()
-
-
-
-
-
-# great site to help http://stat545.com/block023_dplyr-do.html
+# make function that will convert accession to gene for each graph :)-----------
+# indiv_mpa_to_gene <- function (dat, gene_dat){
+#   dat$gene <- dat$Master.Protein.Accessions
+#   for (i in 1:nrow(dat)){
+#     temp <- which(dat$gene[i] == gene_dat$Accession, TRUE)
+#     if (length(temp) == 1){
+#       dat$gene <- gsub(dat$gene[i], gene_dat$Gene[temp], dat$gene)
+#     }
+#   }
+#   return(dat$gene)
+# }
 
 
 
-
+for (pro in pros){
+  
+  temp_df <- filter(df, Master.Protein.Accessions == pro)
+  
+  g <- plot_pro(temp_df, g_title = pro)
+  
+  plot(g)
+  
+}
 
