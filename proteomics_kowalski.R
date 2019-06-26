@@ -239,6 +239,7 @@ plot_pro <- function(dat, g_title, FUN = geom_point){
     FUN(mapping = aes(x = week, y = abundance, fill = leg), 
                 alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
     labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
+    geom_errorbar(aes(ymin = abundance - sd, ymax = abundance + sd, width = 0.2)) +
     expand_limits(x = 0, y = 0) +
     theme_classic() +  
     expand_limits(x = 0, y = 0) +
@@ -261,6 +262,7 @@ plot_pro <- function(dat, g_title, FUN = geom_point){
   return(g)
 }
 
+plot_pro(df_g, "ADFS", FUN = geom_jitter)
 
 # make a loop to make multiple plots
 pros <-  c("P07310", "Q5SX40; Q5SX39; G3UW82", "P05977", "Q5SX39", "P68134", 
