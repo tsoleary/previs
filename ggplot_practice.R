@@ -190,10 +190,10 @@ ggplot(data = df, aes(x = x, y = y)) +
 lm_eqn <- function(lm_object) {
   eq <-
     substitute(
-      italic(y) == a + b %.% italic(x),
+      italic(y) == m ~ italic(x) + b,
       list(
-        a = as.character(signif(coef(lm_object)[1], digits = 2)),
-        b = as.character(signif(coef(lm_object)[2], digits = 2))
+        b = as.character(signif(coef(lm_object)[1], digits = 2)),
+        m = as.character(signif(coef(lm_object)[2], digits = 2))
       )
     )
   r <- 
@@ -237,11 +237,11 @@ plot_pro <- function(dat, g_title, FUN = geom_point){
     expand_limits(x = 0, y = 0) +
     geom_smooth(mapping = aes(color = drv), method = 'lm', se = FALSE, 
                 size = 1.1, show.legend = FALSE, linetype = "dotted") +
-    annotate("text", x = 9.5, y = 0.75*(max(dat$hwy)), 
+    annotate("text", x = 9.5, y = 0.78*(max(dat$hwy)), 
              label = eqn_l[1], parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9.5, y = 0.70*(max(dat$hwy)), 
+    annotate("text", x = 9.5, y = 0.73*(max(dat$hwy)), 
              label = eqn_l[2], parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9.5, y = 0.63*(max(dat$hwy)), 
+    annotate("text", x = 9.5, y = 0.66*(max(dat$hwy)), 
              label = eqn_l[3], parse = TRUE, color = "#F98B86") +
     annotate("text", x = 9.5, y = 0.25*(max(dat$hwy)), 
              label = eqn_r[1], parse = TRUE, color = "#53D3D7") +
