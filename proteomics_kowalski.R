@@ -1,6 +1,6 @@
 # Proteomic analysis: Data imported from Proteome Discoverer 2.2 ---------------
 
-library("tidyverse")
+library(tidyverse)
 
 setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 data_raw <- 
@@ -49,8 +49,7 @@ data <- as_tibble(data)
 data <- cbind(data, norm_test)
 
 
-# # sum of every column 
-# 
+# # sum of every column
 # norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
 # 
 # raw_abun_mat <- as.matrix(data_raw[, ctrl_raw])
@@ -118,16 +117,14 @@ min_pep <- 3
 protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-write.csv(protein, "kowalski_F_w1_w8_hist_norm__total_r.csv")
-
-
-
+write.csv(protein, "kowalski_F_w1_w8_norm_to_sum_total_r.csv")
 
 ################################################################################
 # proteins changing over time --------------------------------------------------
+################################################################################
 
-# protein <- read.csv("kowalski_F_w1_w8_norm_to_sum_total_r.csv")
-# protein$X <- NULL
+protein <- read.csv("kowalski_F_w1_w8_norm_to_sum_total_r.csv")
+protein$X <- NULL
 
 colnames(protein) <- gsub("_norm", "", colnames(protein))
 colnames(protein) <- gsub("_Sample", "", colnames(protein))
@@ -141,33 +138,30 @@ df_tidy <- protein %>%
 
 df_tidy$week <- as.numeric(df_tidy$week)
 
-#remove the NA's
-df_tidy <- df_tidy[!is.na(df_tidy$abundance), ]
-
-# mean together the duplicates in the same week
-df <- df_tidy %>%
-  group_by(Master.Protein.Accessions, sex, leg, week) %>%
-  summarize(abundance = mean(abundance, na.rm = TRUE))
-
+# # mean together the duplicates in the same week
+# df <- df_tidy %>%
+#   group_by(Master.Protein.Accessions, sex, leg, week) %>%
+#   summarize(abundance = mean(abundance, na.rm = TRUE))
+# 
 # median together the duplicates in the same week
 df <- df_tidy %>%
   group_by(Master.Protein.Accessions, sex, leg, week) %>%
-  summarize(sd = sd(abundance, na.rm = TRUE), 
-            abundance = median(abundance, na.rm = TRUE))
+  summarize(abundance = median(abundance, na.rm = TRUE))
 
-df <- df[!is.na(df_med$abundance), ]
-
+#remove the NA's
+df <- df[!is.na(df$abundance), ]
 
 # to remove proteins that have data in just one week  
 df <- df %>%
   group_by(Master.Protein.Accessions, sex, leg) %>%
   do(filter(., length(unique(week)) > 1)) 
 
-# to remove proteins that don't have data in both legs or just one week
+# to remove proteins that don't have data in both legs
 df <- df %>%
   group_by(Master.Protein.Accessions, sex) %>%
   do(filter(., length(unique(leg)) > 1))
 
+# for linear fit data frame ----------------------------------------------------
 # need to first make a plot of the whole thing
 ggplot(df, aes(x = week, y = abundance)) +
   geom_jitter(mapping = aes(x = week, y = abundance, fill = leg), 
@@ -191,8 +185,10 @@ df_fit <- df %>%
 
 df_fit$gene <- mpa_to_gene(df_fit, gene_df)
 
+
+# plotting ---------------------------------------------------------------------
 # filter for learning
-df_g <- filter(df, Master.Protein.Accessions == "G0YZM8")
+df_g <- filter(df, Master.Protein.Accessions == "A0A068BFR3")
 
 # function to get the regression eqn
 lm_eqn <- function(lm_object) {
@@ -239,40 +235,33 @@ plot_pro <- function(dat, g_title, FUN = geom_point){
     FUN(mapping = aes(x = week, y = abundance, fill = leg), 
                 alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
     labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
-    geom_errorbar(aes(ymin = abundance - sd, ymax = abundance + sd, width = 0.2)) +
     expand_limits(x = 0, y = 0) +
     theme_classic() +  
     expand_limits(x = 0, y = 0) +
     geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
                 size = 1.1, show.legend = FALSE, linetype = "dotted") +
-    annotate("text", x = 9, y = 0.78*(max(dat$abundance)), 
+    annotate("text", x = 9, y = 0.83*(max(dat$abundance)), 
              label = eqn_l[1], parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9, y = 0.73*(max(dat$abundance)), 
+    annotate("text", x = 9, y = 0.78*(max(dat$abundance)), 
              label = eqn_l[2], parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9, y = 0.67*(max(dat$abundance)), 
+    annotate("text", x = 9, y = 0.72*(max(dat$abundance)), 
              label = eqn_l[3], parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9, y = 0.25*(max(dat$abundance)), 
+    annotate("text", x = 9, y = 0.30*(max(dat$abundance)), 
              label = eqn_r[1], parse = TRUE, color = "#53D3D7") +
-    annotate("text", x = 9, y = 0.20*(max(dat$abundance)), 
+    annotate("text", x = 9, y = 0.25*(max(dat$abundance)), 
              label = eqn_r[2], parse = TRUE, color = "#53D3D7") +
-    annotate("text", x = 9, y = 0.14*(max(dat$abundance)), 
+    annotate("text", x = 9, y = 0.19*(max(dat$abundance)), 
              label = eqn_r[3], parse = TRUE, color = "#53D3D7") +
-    coord_cartesian(xlim = c(0, 8), clip = 'off') +
-    theme(plot.margin = unit(c(1, 3, 1, 1), "lines"))
+    coord_cartesian(xlim = c(1, 8), clip = 'off') +
+    theme(plot.margin = unit(c(1, 5, 1, 1), "lines"))
   return(g)
 }
 
-plot_pro(df_g, "ADFS", FUN = geom_jitter)
-
-# make a loop to make multiple plots
-pros <-  c("P07310", "Q5SX40; Q5SX39; G3UW82", "P05977", "Q5SX39", "P68134", 
-           "P97457", "A6ZI44", "A0A0A0MQF6", "Q5SX40; Q5SX39", "Q5SX39; G3UW82", 
-           "Q8R429", "P21550", "E9Q8K5; A2ASS6", "Q7TPR4", "Q9JI91", "O88990", 
-           "O88990; Q9JI91", "O88990; Q9JI91; Q7TPR4")
+# for test the plots and learning :)
+plot_pro(df_g, "PLOTTING IS FUN", FUN = geom_jitter)
 
 # all proteins
-pros <- unique(df_med$Master.Protein.Accessions)
-
+pros <- as.character(unique(df$Master.Protein.Accessions))
 
 # convert accession to gene for each graph -------------------------------------
 indiv_mpa_to_gene <- function (Acc_pro, gene_dat){
@@ -287,7 +276,7 @@ for (pro in pros){
   
   gene <- indiv_mpa_to_gene(pro, protein)
   
-  temp_df <- filter(df_med, Master.Protein.Accessions == pro)
+  temp_df <- filter(df, Master.Protein.Accessions == pro)
   
   g <- plot_pro(temp_df, g_title = gene, FUN = geom_jitter)
   
@@ -295,36 +284,12 @@ for (pro in pros){
   
 }
 
-pdf("plot_F_w1_w8_sum_total_norm_all.pdf", width = 10.75, height = 6)
+pdf("plot_F_w1_w8_norm_sum_total_med.pdf", width = 10.75, height = 6)
 
 for(pro in pros){
   print(plot_list[[pro]])
 }
 
-dev.off()
+dev.off() # pdf file should appear in working directory
 
-
-
-
-
-
-
-
-
-
-pros <- unique(df_med$Master.Protein.Accessions)
-
-# counting the number of rows in each data frame
-
-n_obs_var <- function(dat){
-  num_rows <- nrow(dat)
-  num_legs <- length(unique(dat$leg))
-  result <- cbind(num_rows, num_legs)
-  result <- as.data.frame(result)
-  return(result)
-}
-
-df3 <- df_med %>%
-  group_by(Master.Protein.Accessions, sex) %>%
-  do(n_obs_var(.))
 
