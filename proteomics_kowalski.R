@@ -150,11 +150,23 @@ df <- df_tidy %>%
   summarize(abundance = mean(abundance, na.rm = TRUE))
 
 # median together the duplicates in the same week
-df_med <- df_tidy %>%
+df <- df_tidy %>%
   group_by(Master.Protein.Accessions, sex, leg, week) %>%
-  summarize(abundance = median(abundance, na.rm = TRUE))
+  summarize(sd = sd(abundance, na.rm = TRUE), 
+            abundance = median(abundance, na.rm = TRUE))
 
-df_med <- df_med[!is.na(df_med$abundance), ]
+df <- df[!is.na(df_med$abundance), ]
+
+
+# to remove proteins that have data in just one week  
+df <- df %>%
+  group_by(Master.Protein.Accessions, sex, leg) %>%
+  do(filter(., length(unique(week)) > 1)) 
+
+# to remove proteins that don't have data in both legs or just one week
+df <- df %>%
+  group_by(Master.Protein.Accessions, sex) %>%
+  do(filter(., length(unique(leg)) > 1))
 
 # need to first make a plot of the whole thing
 ggplot(df, aes(x = week, y = abundance)) +
@@ -181,16 +193,6 @@ df_fit$gene <- mpa_to_gene(df_fit, gene_df)
 
 # filter for learning
 df_g <- filter(df, Master.Protein.Accessions == "G0YZM8")
-
-# PLOT
-ggplot(df_g, aes(x = week, y = abundance)) +
-  geom_point(mapping = aes(x = week, y = abundance, fill = leg), 
-             alpha = 0.5, size = 3, pch = 21,  color = "black") +
-  labs(title = "Neil", x = "Week", y = "Raw Abundance", fill = "Leg") +
-  theme_classic() +
-  expand_limits(x = 0, y = 0) +
-  geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
-              size = 1.1, show.legend = FALSE, linetype = "dotted")
 
 # function to get the regression eqn
 lm_eqn <- function(lm_object) {
@@ -291,7 +293,7 @@ for (pro in pros){
   
 }
 
-pdf("plots.pdf", width = 10.75, height = 6)
+pdf("plot_F_w1_w8_sum_total_norm_all.pdf", width = 10.75, height = 6)
 
 for(pro in pros){
   print(plot_list[[pro]])
@@ -302,18 +304,16 @@ dev.off()
 
 
 
+
+
+
+
+
+
 pros <- unique(df_med$Master.Protein.Accessions)
 
-
-# to remove proteins that don't have data in both legs!
-df4 <- df %>%
-  group_by(Master.Protein.Accessions, sex) %>%
-  do(filter(., length(unique(leg)) > 1)) %>%
-  group_by(Master.Protein.Accessions, sex, leg) %>%
-  do(filter(., length(unique(week)) > 1)) 
-
-
 # counting the number of rows in each data frame
+
 n_obs_var <- function(dat){
   num_rows <- nrow(dat)
   num_legs <- length(unique(dat$leg))
@@ -322,9 +322,7 @@ n_obs_var <- function(dat){
   return(result)
 }
 
-
 df3 <- df_med %>%
-  group_by(Master.Protein.Accessions, sex, leg) %>%
+  group_by(Master.Protein.Accessions, sex) %>%
   do(n_obs_var(.))
-
 
