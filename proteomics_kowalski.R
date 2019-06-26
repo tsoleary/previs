@@ -196,14 +196,29 @@ ggplot(df_g, aes(x = week, y = abundance)) +
 lm_eqn <- function(lm_object) {
   eq <-
     substitute(
-      italic(y) == a + b %.% italic(x) * "," ~ ~ italic(r) ^ 2 ~ "=" ~ r2,
+      italic(y) == m ~ italic(x) + b,
       list(
-        a = as.character(signif(coef(lm_object)[1], digits = 2)),
-        b = as.character(signif(coef(lm_object)[2], digits = 2)),
+        b = as.character(signif(coef(lm_object)[1], digits = 2)),
+        m = as.character(signif(coef(lm_object)[2], digits = 2))
+      )
+    )
+  r <- 
+    substitute(
+      italic(r) ^ 2 ~ "=" ~ r2,
+      list(
         r2 = as.character(signif(summary(lm_object)$r.squared, digits = 3))
       )
     )
-  as.character(as.expression(eq))
+  p <-  
+    substitute(
+      italic("p-val") ~ "=" ~ pval,
+      list(
+        pval = as.character(signif(anova(lm_object)$'Pr(>F)'[1], digits = 3))
+      )
+    )
+  result <- c(as.character(as.expression(eq)), as.character(as.expression(r)),
+              as.character(as.expression(p)))
+  return(result)
 }
 
 # plot_pro function
@@ -227,12 +242,20 @@ plot_pro <- function(dat, g_title, FUN = geom_point){
     expand_limits(x = 0, y = 0) +
     geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
                 size = 1.1, show.legend = FALSE, linetype = "dotted") +
-    annotate("text", x = 9.5, y = 0.75*(max(dat$abundance)), 
-             label = eqn_l, parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9.5, y = 0.25*(max(dat$abundance)), 
-             label = eqn_r, parse = TRUE, color = "#53D3D7") +
+    annotate("text", x = 9, y = 0.78*(max(dat$abundance)), 
+             label = eqn_l[1], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = 9, y = 0.73*(max(dat$abundance)), 
+             label = eqn_l[2], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = 9, y = 0.67*(max(dat$abundance)), 
+             label = eqn_l[3], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = 9, y = 0.25*(max(dat$abundance)), 
+             label = eqn_r[1], parse = TRUE, color = "#53D3D7") +
+    annotate("text", x = 9, y = 0.20*(max(dat$abundance)), 
+             label = eqn_r[2], parse = TRUE, color = "#53D3D7") +
+    annotate("text", x = 9, y = 0.14*(max(dat$abundance)), 
+             label = eqn_r[3], parse = TRUE, color = "#53D3D7") +
     coord_cartesian(xlim = c(0, 8), clip = 'off') +
-    theme(plot.margin = unit(c(1, 8, 1, 1), "lines"))
+    theme(plot.margin = unit(c(1, 3, 1, 1), "lines"))
   return(g)
 }
 
@@ -243,6 +266,9 @@ pros <-  c("P07310", "Q5SX40; Q5SX39; G3UW82", "P05977", "Q5SX39", "P68134",
            "Q8R429", "P21550", "E9Q8K5; A2ASS6", "Q7TPR4", "Q9JI91", "O88990", 
            "O88990; Q9JI91", "O88990; Q9JI91; Q7TPR4")
 
+# all proteins
+pros <- unique(df_med$Master.Protein.Accessions)
+
 
 # convert accession to gene for each graph -------------------------------------
 indiv_mpa_to_gene <- function (Acc_pro, gene_dat){
@@ -250,21 +276,6 @@ indiv_mpa_to_gene <- function (Acc_pro, gene_dat){
   gene <- gsub(Acc_pro, gene_dat$gene[temp], Acc_pro)
   return(gene)
 }
-
-for (pro in pros){
-  
-  gene <- indiv_mpa_to_gene(pro, protein)
-  
-  temp_df <- filter(df_med, Master.Protein.Accessions == pro)
-  
-  g <- plot_pro(temp_df, g_title = gene, FUN = geom_jitter)
-  
-  plot(g)
-  
-}
-
-
-################################################################################
 
 plot_list <- list()
 
@@ -288,14 +299,32 @@ for(pro in pros){
 
 dev.off()
 
-################################################################################
+
 
 
 pros <- unique(df_med$Master.Protein.Accessions)
 
 
-# to remove proteins that don't have data in both legs! this just works on the first occurance?
-df_med <- df_med %>%
+# to remove proteins that don't have data in both legs!
+df4 <- df %>%
   group_by(Master.Protein.Accessions, sex) %>%
-  filter(., length(unique(leg)) > 1)
+  do(filter(., length(unique(leg)) > 1)) %>%
+  group_by(Master.Protein.Accessions, sex, leg) %>%
+  do(filter(., length(unique(week)) > 1)) 
+
+
+# counting the number of rows in each data frame
+n_obs_var <- function(dat){
+  num_rows <- nrow(dat)
+  num_legs <- length(unique(dat$leg))
+  result <- cbind(num_rows, num_legs)
+  result <- as.data.frame(result)
+  return(result)
+}
+
+
+df3 <- df_med %>%
+  group_by(Master.Protein.Accessions, sex, leg) %>%
+  do(n_obs_var(.))
+
 
