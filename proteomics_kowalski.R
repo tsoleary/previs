@@ -2,6 +2,8 @@
 
 library(tidyverse)
 
+# source the functions in the proteomics_functions.R script!
+
 setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 data_raw <- 
   read.csv("Kowalski_F_w1_w8_all_peptides.csv")
@@ -9,15 +11,6 @@ data_raw <-
 # Normalization ----------------------------------------------------------------
 
 ctrl_raw <- grep("F", colnames(data_raw))
-
-by_group <- function (dat, col, FUN = median) {
-  list <- NULL
-  for (i in 1:nrow(dat)) {
-    temp <- FUN(as.numeric(dat[i, col]), na.rm = TRUE)
-    list <- c(list, temp)
-  }
-  return(list)
-}
 
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
@@ -74,19 +67,6 @@ data_top <-
 
 group_names <- colnames(data_top)[grep("norm", colnames(data))]
 
-by_protein <- function (dat, groups, FUN = mean){
-  tab <- NULL
-  for (col in groups){
-    temp <- tapply(dat[, col],
-                   dat$Master.Protein.Accessions,
-                   FUN,
-                   na.rm = TRUE)
-    tab <- cbind(tab, temp)
-  }
-  colnames(tab) <- groups
-  return(tab)
-}
-
 protein <- by_protein(data_top, group_names) %>%
   as.data.frame %>%
   rownames_to_column("Master.Protein.Accessions")
@@ -98,17 +78,6 @@ protein$Master.Protein.Accessions <-
 # Converting protein accession to gene symbol ----------------------------------
 gene_df <- read.csv('Kowalski_F_w1_w8_gene_names.csv')
 
-mpa_to_gene <- function (dat, gene_dat){
-  dat$gene <- dat$Master.Protein.Accessions
-  for (i in 1:nrow(dat)){
-    temp <- which(dat$gene[i] == gene_dat$Accession, TRUE)
-    if (length(temp) == 1){
-      dat$gene <- gsub(dat$gene[i], gene_dat$Gene[temp], dat$gene)
-    }
-  }
-  return(dat$gene)
-}
-
 data$gene <- mpa_to_gene(data, gene_df)
 protein$gene <- mpa_to_gene(protein, gene_df)
 
@@ -118,178 +87,3 @@ protein$peptides <- table(data$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
 write.csv(protein, "kowalski_F_w1_w8_norm_to_sum_total_r.csv")
-
-################################################################################
-# proteins changing over time --------------------------------------------------
-################################################################################
-
-protein <- read.csv("kowalski_F_w1_w8_norm_to_sum_total_r.csv")
-protein$X <- NULL
-
-colnames(protein) <- gsub("_norm", "", colnames(protein))
-colnames(protein) <- gsub("_Sample", "", colnames(protein))
-
-# convert protein data.frame to a tidy data.frame
-samples <- colnames(protein)[grep("F", colnames(protein))]
-
-df_tidy <- protein %>% 
-  gather(sample, abundance, samples) %>%
-  separate("sample", c("file", "leg", "sex", "week"), sep = "_")
-
-df_tidy$week <- as.numeric(df_tidy$week)
-
-# # mean together the duplicates in the same week
-# df <- df_tidy %>%
-#   group_by(Master.Protein.Accessions, sex, leg, week) %>%
-#   summarize(abundance = mean(abundance, na.rm = TRUE))
-# 
-# median together the duplicates in the same week
-df <- df_tidy %>%
-  group_by(Master.Protein.Accessions, sex, leg, week) %>%
-  summarize(abundance = median(abundance, na.rm = TRUE))
-
-#remove the NA's
-df <- df[!is.na(df$abundance), ]
-
-# to remove proteins that have data in just one week  
-df <- df %>%
-  group_by(Master.Protein.Accessions, sex, leg) %>%
-  do(filter(., length(unique(week)) > 1)) 
-
-# to remove proteins that don't have data in both legs
-df <- df %>%
-  group_by(Master.Protein.Accessions, sex) %>%
-  do(filter(., length(unique(leg)) > 1))
-
-# for linear fit data frame ----------------------------------------------------
-# need to first make a plot of the whole thing
-ggplot(df, aes(x = week, y = abundance)) +
-  geom_jitter(mapping = aes(x = week, y = abundance, fill = leg), 
-              alpha = 0.5, size = 3, pch = 21,  color = "black")
-
-# get the slope and intercept
-lin_fit <- function(dat){
-  the_fit <- lm(dat$abundance ~ dat$week, dat)
-  p_val <- anova(the_fit)$'Pr(>F)'[1]
-  slo_int <- data.frame(t(coef(the_fit)))
-  r_sq <- summary(the_fit)$r.squared
-  result <- cbind(slo_int, r_sq, p_val)
-  colnames(result) <- c("intercept", "slope", "r_squared", "p_value")
-  return(result)
-}
-
-# do that function to each subgroup
-df_fit <- df %>%
-  group_by(Master.Protein.Accessions, sex, leg) %>%
-  do(lin_fit(.))
-
-df_fit$gene <- mpa_to_gene(df_fit, gene_df)
-
-
-# plotting ---------------------------------------------------------------------
-# filter for learning
-df_g <- filter(df, Master.Protein.Accessions == "A0A068BFR3")
-
-# function to get the regression eqn
-lm_eqn <- function(lm_object) {
-  eq <-
-    substitute(
-      italic(y) == m ~ italic(x) + b,
-      list(
-        b = as.character(signif(coef(lm_object)[1], digits = 2)),
-        m = as.character(signif(coef(lm_object)[2], digits = 2))
-      )
-    )
-  r <- 
-    substitute(
-      italic(r) ^ 2 ~ "=" ~ r2,
-      list(
-        r2 = as.character(signif(summary(lm_object)$r.squared, digits = 3))
-      )
-    )
-  p <-  
-    substitute(
-      italic("p-val") ~ "=" ~ pval,
-      list(
-        pval = as.character(signif(anova(lm_object)$'Pr(>F)'[1], digits = 3))
-      )
-    )
-  result <- c(as.character(as.expression(eq)), as.character(as.expression(r)),
-              as.character(as.expression(p)))
-  return(result)
-}
-
-# plot_pro function
-plot_pro <- function(dat, g_title, FUN = geom_point){
-  
-  df_l <- filter(dat, leg == "L")
-  df_r <- filter(dat, leg == "R")
-  
-  lm_l <- lm(abundance ~ week, df_l)
-  lm_r <- lm(abundance ~ week, df_r)
-  
-  eqn_l <- lm_eqn(lm_l)
-  eqn_r <- lm_eqn(lm_r)
-  
-  g <- ggplot(dat, aes(x = week, y = abundance)) +
-    FUN(mapping = aes(x = week, y = abundance, fill = leg), 
-                alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
-    labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
-    expand_limits(x = 0, y = 0) +
-    theme_classic() +  
-    expand_limits(x = 0, y = 0) +
-    geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
-                size = 1.1, show.legend = FALSE, linetype = "dotted") +
-    annotate("text", x = 9, y = 0.83*(max(dat$abundance)), 
-             label = eqn_l[1], parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9, y = 0.78*(max(dat$abundance)), 
-             label = eqn_l[2], parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9, y = 0.72*(max(dat$abundance)), 
-             label = eqn_l[3], parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9, y = 0.30*(max(dat$abundance)), 
-             label = eqn_r[1], parse = TRUE, color = "#53D3D7") +
-    annotate("text", x = 9, y = 0.25*(max(dat$abundance)), 
-             label = eqn_r[2], parse = TRUE, color = "#53D3D7") +
-    annotate("text", x = 9, y = 0.19*(max(dat$abundance)), 
-             label = eqn_r[3], parse = TRUE, color = "#53D3D7") +
-    coord_cartesian(xlim = c(1, 8), clip = 'off') +
-    theme(plot.margin = unit(c(1, 5, 1, 1), "lines"))
-  return(g)
-}
-
-# for test the plots and learning :)
-plot_pro(df_g, "PLOTTING IS FUN", FUN = geom_jitter)
-
-# all proteins
-pros <- as.character(unique(df$Master.Protein.Accessions))
-
-# convert accession to gene for each graph -------------------------------------
-indiv_mpa_to_gene <- function (Acc_pro, gene_dat){
-  temp <- which(Acc_pro == gene_dat$Master.Protein.Accessions, TRUE)
-  gene <- gsub(Acc_pro, gene_dat$gene[temp], Acc_pro)
-  return(gene)
-}
-
-plot_list <- list()
-
-for (pro in pros){
-  
-  gene <- indiv_mpa_to_gene(pro, protein)
-  
-  temp_df <- filter(df, Master.Protein.Accessions == pro)
-  
-  g <- plot_pro(temp_df, g_title = gene, FUN = geom_jitter)
-  
-  plot_list[[pro]] <- g
-  
-}
-
-pdf("plot_F_w1_w8_norm_sum_total_med.pdf", width = 10.75, height = 6)
-
-for(pro in pros){
-  print(plot_list[[pro]])
-}
-
-dev.off() # pdf file should appear in working directory
-
-

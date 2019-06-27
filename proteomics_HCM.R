@@ -3,6 +3,8 @@
 
 library(tidyverse)
 
+# source the functions in the proteomics_functions.R script!
+
 setwd("C:/Users/PrevBeast/Documents/R/HCM")
 
 data_raw <- read.csv("mash_r.csv")
@@ -10,15 +12,6 @@ data_raw <- read.csv("mash_r.csv")
 # Normalization ----------------------------------------------------------------
 
 ctrl_raw <- grep("GOL", colnames(data_raw))
-
-by_group <- function (dat, col, FUN = median) {
-  list <- NULL
-  for (i in 1:nrow(dat)) {
-    temp <- FUN(as.numeric(dat[i, col]), na.rm = TRUE)
-    list <- c(list, temp)
-  }
-  return(list)
-}
 
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
@@ -70,36 +63,16 @@ data$group2_sd <- by_group(data, group2, FUN = sd)
 data$group3_sd <- by_group(data, group3, FUN = sd)
 data$ctrl_sd <- by_group(data, ctrl, FUN = sd)
 
-# Relative abundance ratio for each peptide
-abun_ratio <- function (dat, group, ctrl = "ctrl_med"){
-  dat[, group] / dat[, ctrl]
-}
-
+# ratios
 data$ratio1 <- abun_ratio(data, "group1_med")
 data$ratio2 <- abun_ratio(data, "group2_med")
 data$ratio3 <- abun_ratio(data, "group3_med")
 
 # Degrees of freedom
-count_df <- function (dat, col, rep = 1){
-  list <- NULL
-  for (i in 1:nrow(dat)){
-    temp <- length(which(!is.na(dat[i, col])))
-    temp <- temp / rep
-    if(temp >= 1){
-      temp <- temp - 1
-    }
-    list <- c(list, temp)
-  }
-  return(list)
-}
-
 data$group1_df <- count_df(data, group1)
 data$group2_df <- count_df(data, group2)
 data$group3_df <- count_df(data, group3)
 data$ctrl_df <- count_df(data, ctrl)
-
-# which(is.na(data$ratio1))
-
 
 # Removing rows with NA values for the median
 data <- data[!(is.na(data$ratio1)), ]
@@ -107,53 +80,6 @@ data <- data[!(is.na(data$ratio2)), ]
 data <- data[!(is.na(data$ratio3)), ]
 
 # Remove outliers --------------------------------------------------------------
-by_protein <- function (dat, groups, FUN = mean){
-  tab <- NULL
-  for (col in groups){
-    temp <- tapply(dat[, col],
-                   dat$Master.Protein.Accessions,
-                   FUN,
-                   na.rm = TRUE)
-    tab <- cbind(tab, temp)
-  }
-  colnames(tab) <- groups
-  return(tab)
-}
-
-rm_outliers <- function (dat, pro_df, ratio, mult = 2){
-  
-  sd_ratio_temp_df <- by_protein(dat, ratio, FUN = sd) %>%
-    as.data.frame %>%
-    rownames_to_column("Master.Protein.Accessions") %>%
-    'colnames<-' (c("Master.Protein.Accessions", "sd_ratios"))
-  
-  pro_temp <- dplyr::full_join(pro_df, sd_ratio_temp_df,
-                               by = "Master.Protein.Accessions")
-  
-  pro_temp$max_ratio <- pro_temp$ratio + mult * pro_temp$sd_ratio
-  pro_temp$min_ratio <- pro_temp$ratio - mult * pro_temp$sd_ratio
-  
-  data_rm_out <- NULL
-  
-  for (pro in unique(dat$Master.Protein.Accessions)){
-    temp <- dplyr::filter(dat, dat$Master.Protein.Accessions == pro)
-    
-    rm_high <- which(temp[, ratio] > pro_temp$max_ratio[which(
-      pro_temp$Master.Protein.Accessions == pro)])
-    
-    rm_low <- which(temp[, ratio] < pro_temp$min_ratio[which(
-      pro_temp$Master.Protein.Accessions == pro)])
-    
-    rm <- c(rm_high, rm_low)
-    if (length(rm) > 0){
-      temp_rm <- temp[-rm, ]
-      data_rm_out <- dplyr::bind_rows(data_rm_out, temp_rm)
-    } else {
-      data_rm_out <- dplyr::bind_rows(data_rm_out, temp)
-    }
-  }
-  return(data_rm_out)
-}
 
 pro_out1 <- by_protein(data, "ratio1") %>% as.data.frame %>%
   rownames_to_column("Master.Protein.Accessions")
@@ -190,10 +116,6 @@ protein <- by_protein(data_top, group_names) %>%
 protein$Master.Protein.Accessions <-
   protein$Master.Protein.Accessions %>%
   as.character
-
-square_x_df <- function (dat, group_sd, group_df){
-  (dat[, group_sd])^2 * (dat[, group_df])
-}
 
 data_top$group1_sd_df <- square_x_df(data_top, "group1_sd", "group1_df")
 data_top$group2_sd_df <- square_x_df(data_top, "group2_sd", "group2_df")
@@ -233,23 +155,10 @@ protein$ratio2 <- by_protein(data, "ratio2") %>% as.numeric
 protein$ratio3 <- by_protein(data, "ratio3") %>% as.numeric
 
 # Standard deviation relative protein abundance ratio
-ratio_sd <- function (dat, ratio, group1_sd, group1_med, ctrl_sd, ctrl_med){
-  ratio_sd_pep <- NULL
-  for (i in 1:nrow(dat)){
-    temp1 <- (dat[i, group1_sd] / dat[i, group1_med])^2
-    temp2 <- (dat[i, ctrl_sd] / dat[i, ctrl_med])^2
-    result <- dat[i, ratio] * sqrt(temp1 + temp2)
-    ratio_sd_pep <- c(ratio_sd_pep, result)
-  }
-  return(ratio_sd_pep)
-}
-
 data$ratio1_sd <- ratio_sd(data, "ratio1", "group1_sd", "group1_med", 
                           "ctrl_sd", "ctrl_med")
-
 data$ratio2_sd <- ratio_sd(data, "ratio2", "group2_sd", "group2_med", 
                           "ctrl_sd", "ctrl_med")
-
 data$ratio3_sd <- ratio_sd(data, "ratio3", "group3_sd", "group3_med", 
                           "ctrl_sd", "ctrl_med")
 
@@ -377,19 +286,6 @@ colnames(stacked) <- c("Master.Protein.Accessions", "group1_log", "samp1",
                        "group2_log", "samp2","group3_log", "samp3",
                        "ctrl_log", "ctrl")
 
-pval_ttest <- function (dat, group, ctrl, col = "Master.Protein.Accessions"){
-  name <- NULL
-  p_value <- NULL
-  for (pro in unique(dat[, col])) {
-    temp <- dplyr::filter(dat, dat[, col] == pro)
-    pval_temp <- tryCatch(t.test(temp[, group], temp[, ctrl])$p.value, 
-                          error=function(err) NA)
-    name <- c(name, pro)
-    p_value <- c(p_value, pval_temp)
-  }
-  return(as.data.frame(cbind(name, p_value)))
-}
-
 # t-test for group1
 p_vals1 <- pval_ttest(stacked, "group1_log", "ctrl_log")
 colnames(p_vals1) <- c("Master.Protein.Accessions", "pvalue1")
@@ -422,17 +318,6 @@ protein <- full_join(protein, p_vals3, by = "Master.Protein.Accessions")
 
 # Converting protein accession to gene symbol ----------------------------------
 gene_df <- read.csv("human_PD_accession_gene.csv")
-
-mpa_to_gene <- function (dat, gene_dat){
-  dat$gene <- dat$Master.Protein.Accessions
-  for (i in 1:nrow(dat)){
-    temp <- which(dat$gene[i] == gene_dat$Accession, TRUE)
-    if (length(temp) == 1){
-      dat$gene <- gsub(dat$gene[i], gene_dat$Gene[temp], dat$gene)
-    }
-  }
-  return(dat$gene)
-}
 
 data$gene <- mpa_to_gene(data, gene_df)
 protein$gene <- mpa_to_gene(protein, gene_df)

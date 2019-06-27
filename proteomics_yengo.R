@@ -3,6 +3,8 @@
 
 library(tidyverse)
 
+# source the functions in the proteomics_functions.R script!
+
 setwd("C:/Users/PrevBeast/Documents/R/Yengo")
 data_raw <- 
   read.csv("Yengo_HMM_purified_labeled_RLC_exchange_042219_all_peptides.csv")
@@ -10,15 +12,6 @@ data_raw <-
 # Normalization ----------------------------------------------------------------
 
 ctrl_raw <- grep("F", colnames(data_raw))
-
-by_group <- function (dat, col, FUN = median) {
-  list <- NULL
-  for (i in 1:nrow(dat)) {
-    temp <- FUN(as.numeric(dat[i, col]), na.rm = TRUE)
-    list <- c(list, temp)
-  }
-  return(list)
-}
 
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
@@ -38,7 +31,7 @@ norm_pro <- histones
 norm_pep <- subset(data, data$Master.Protein.Accessions == norm_pro)
 numeric_cols <- which(sapply(norm_pep, is.numeric) == TRUE)
 raw_abun <- numeric_cols[-length(numeric_cols)]
-norm_value <- sapply(norm_pep[, raw_abun], mean)
+norm_value <- sapply(norm_pep[, raw_abun], mean, na.rm = TRUE)
 
 raw_abun_mat <- as.matrix(data[, raw_abun])
 
@@ -71,21 +64,6 @@ data_top <-
 
 group_names <- colnames(data)[grep("norm", colnames(data))]
 
-
-by_protein <- function (dat, groups, FUN = mean){
-  tab <- NULL
-  for (col in groups){
-    temp <- tapply(dat[, col],
-                   dat$Master.Protein.Accessions,
-                   FUN,
-                   na.rm = TRUE)
-    tab <- cbind(tab, temp)
-  }
-  colnames(tab) <- groups
-  return(tab)
-}
-
-
 protein <- by_protein(data_top, group_names) %>%
   as.data.frame %>%
   rownames_to_column("Master.Protein.Accessions")
@@ -96,17 +74,6 @@ protein$Master.Protein.Accessions <-
 
 # Converting protein accession to gene symbol ----------------------------------
 gene_df <- read.csv('mouse_uniprot_gene_yengo_rlc.csv')
-
-mpa_to_gene <- function (dat, gene_dat){
-  dat$gene <- dat$Master.Protein.Accessions
-  for (i in 1:nrow(dat)){
-    temp <- which(dat$gene[i] == gene_dat$Accession, TRUE)
-    if (length(temp) == 1){
-      dat$gene <- gsub(dat$gene[i], gene_dat$Gene[temp], dat$gene)
-    }
-  }
-  return(dat$gene)
-}
 
 data$gene <- mpa_to_gene(data, gene_df)
 protein$gene <- mpa_to_gene(protein, gene_df)

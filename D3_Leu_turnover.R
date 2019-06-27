@@ -4,6 +4,8 @@ library(tidyverse)
 library(plotly)
 library(Rdisop)
 
+# source the functions in the proteomics_functions.R script!
+
 setwd("C:/Users/PrevBeast/Documents/R/Helms")
 
 # Tidy the data ----------------------------------------------------------------
@@ -102,10 +104,6 @@ for (col in isotopes){
   df[, paste(col, "hist_norm", sep = "_")] <- df[, col] / df$hist_avg
 }
 
-
-
-
-
 # Mega Model -------------------------------------------------------------------
 
 # initial conditions
@@ -131,9 +129,3 @@ mod <- mega_model(peptide, deg_old, deg_new, syn, t0_abun, per_lab, time)
 
 
 # need to figure out how to work backwards to get the M_0 corrected values etc
-
-
-
-
-
-
