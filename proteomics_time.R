@@ -2,7 +2,7 @@
 
 library(tidyverse)
 
-# source the functions in the proteomics_functions.R script!
+# source the functions in the proteomics_functions.R script
 
 # read in the data.frame with the top 3 avg for each protein & each sample
 protein <- read.csv("kowalski_F_w1_w8_norm_to_sum_total_r.csv")
