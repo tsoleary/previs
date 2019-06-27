@@ -15,7 +15,7 @@ ctrl_raw <- grep("F", colnames(data_raw))
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
 # set the max number of peptides used in analysis
-max_pep <- 3
+max_pep <- 1
 
 data <-
   tbl_df(data_raw) %>%
@@ -43,7 +43,7 @@ data <-
 
 
 # sum of every column
-norm_value <- colSums(data[, ctrl_raw], na.rm = TRUE)
+norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
 
 raw_abun_mat <- as.matrix(data[, ctrl_raw])
 
@@ -78,7 +78,7 @@ protein$gene <- mpa_to_gene(protein, gene_df)
 
 # Minimum number of peptides for each protein group ----------------------------
 min_pep <- 3 
-protein$peptides <- table(data$Master.Protein.Accessions)
+protein$peptides <- table(data_raw$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-write.csv(protein, "kowalski_F_w1_w8_norm_sum_total_top_3_r.csv")
+write.csv(protein, "kowalski_F_w1_w8_top_1_abund_norm_sum_total_r.csv")

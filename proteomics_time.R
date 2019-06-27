@@ -57,7 +57,7 @@ df <- df %>%
 df_g <- filter(df, Master.Protein.Accessions == "A0A068BFR3")
 
 # for test the plots and learning :)
-plot_pro(df_g, "PLOTTING IS FUN", FUN = geom_jitter)
+plot_pro(df_g, "PLOTTING IS FUN")
 
 # plot all proteins ------------------------------------------------------------
 pros <- as.character(unique(df$Master.Protein.Accessions))
@@ -71,7 +71,7 @@ for (pro in pros){
   plot_list[[pro]] <- g
 }
 
-pdf("plot_F_w1_w8_norm_sum_total_top_3_all.pdf", width = 10.75, height = 6)
+pdf("plot_F_w1_w8_top_1_abund_norm_sum_total_med.pdf", width = 10.75, height = 6)
 
 for(pro in pros){
   print(plot_list[[pro]])
