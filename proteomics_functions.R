@@ -165,7 +165,7 @@ lm_eqn <- function(lm_object) {
 }
 
 # plot_pro function
-plot_pro <- function(dat, g_title, FUN = geom_point, x_pos = 9, y1_pos = 0.83,
+plot_pro <- function(dat, g_title, FUN = geom_jitter, x_pos = 9, y1_pos = 0.83,
                      y2_pos = 0.30){
   
   df_l <- filter(dat, leg == "L")
