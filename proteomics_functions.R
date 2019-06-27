@@ -1,4 +1,4 @@
-# functions used in proteomic analysis -----------------------------------------
+# proteomic analysis top 3 abun & pairwise ratios ------------------------------
 
 # function applied to each peptide for a group of data with median as default
 by_group <- function (dat, col, FUN = median){
@@ -122,7 +122,7 @@ abun_ratio <- function (dat, group, ctrl = "ctrl_med"){
   dat[, group] / dat[, ctrl]
 }
 
-# functions used in proteomics changing over time analysis ---------------------
+# proteins changing over time --------------------------------------------------
 
 # get the slope, intercept r_sq, and pval of each with do(lin_fit(.))
 lin_fit <- function(dat){
@@ -165,7 +165,8 @@ lm_eqn <- function(lm_object) {
 }
 
 # plot_pro function
-plot_pro <- function(dat, g_title, FUN = geom_point){
+plot_pro <- function(dat, g_title, FUN = geom_point, x_pos = 9, y1_pos = 0.83,
+                     y2_pos = 0.30){
   
   df_l <- filter(dat, leg == "L")
   df_r <- filter(dat, leg == "R")
@@ -185,17 +186,17 @@ plot_pro <- function(dat, g_title, FUN = geom_point){
     expand_limits(x = 0, y = 0) +
     geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
                 size = 1.1, show.legend = FALSE, linetype = "dotted") +
-    annotate("text", x = 9, y = 0.83*(max(dat$abundance)), 
+    annotate("text", x = x_pos, y = (y1_pos)*(max(dat$abundance)), 
              label = eqn_l[1], parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9, y = 0.78*(max(dat$abundance)), 
+    annotate("text", x = x_pos, y = (y1_pos - 0.05)*(max(dat$abundance)), 
              label = eqn_l[2], parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9, y = 0.72*(max(dat$abundance)), 
+    annotate("text", x = x_pos, y = (y1_pos - 0.11)*(max(dat$abundance)), 
              label = eqn_l[3], parse = TRUE, color = "#F98B86") +
-    annotate("text", x = 9, y = 0.30*(max(dat$abundance)), 
+    annotate("text", x = x_pos, y = (y2_pos)*(max(dat$abundance)), 
              label = eqn_r[1], parse = TRUE, color = "#53D3D7") +
-    annotate("text", x = 9, y = 0.25*(max(dat$abundance)), 
+    annotate("text", x = x_pos, y = (y2_pos - 0.05)*(max(dat$abundance)), 
              label = eqn_r[2], parse = TRUE, color = "#53D3D7") +
-    annotate("text", x = 9, y = 0.19*(max(dat$abundance)), 
+    annotate("text", x = x_pos, y = (y2_pos - 0.11)*(max(dat$abundance)), 
              label = eqn_r[3], parse = TRUE, color = "#53D3D7") +
     coord_cartesian(xlim = c(1, 8), clip = 'off') +
     theme(plot.margin = unit(c(1, 5, 1, 1), "lines"))
@@ -209,7 +210,7 @@ indiv_mpa_to_gene <- function (Acc_pro, gene_dat){
   return(gene)
 }
 
-# functions used for the D3_Leu labeled turnover study -------------------------
+# D3_Leu labeled turnover study ------------------------------------------------
 
 # calculates the distribution of newly synthesized D3-Leu peptides
 iso_dist <- function (pep, p = 0.5){
@@ -430,33 +431,30 @@ combine_iso <- function (dat){
 mega_model <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, time){
   # create a data frame with a specified length of time 
   mod <- data.frame("time" = time)
+  
   # define the number of D3 Leucines that will be in the peptide and their 
   # proportional syntheis rates based on the percent labeling 
   D3_pep_dist <- iso_dist(peptide, p = per_lab)
+  
   # define the pool names to be used as an argument in the make pools function
   pool_names <- c("D3_0_old_pool", "D3_0_new_pool",
                   paste("D3", 1:(length(D3_pep_dist) - 1), "pool", sep = "_"))
+  
   # make pools for all 
   pool_df <- make_pools(mod, pool_names, syn, deg_old, deg_new, t0_abun, 
                         D3_pep_dist)
+  
   # cbind to the data frame with the time vector
   mod <- cbind(mod, pool_df)
+  
   # create a data frame with all isotopes for each pool
   df_all_isos <- all_isos(mod, pool_names, peptide)
+  
   # cbind all columns together
   mod <- cbind(mod, df_all_isos)
+  
   # sum all the individual isotopes to get the totals
   mod <- cbind(mod, combine_iso(mod))
+  
   return(mod)
 }
-
-
-
-
-
-
-
-
-
-
-
