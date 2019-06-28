@@ -29,31 +29,43 @@ df_tidy$week <- as.numeric(df_tidy$week)
 
 # m1_m0_r ratio calculation using messy data
 
-df_T0 <- df_tidy %>%
-  filter(., week == 8.0 & isotope == "M_0" | week == 8 & isotope == "M_1") %>%
+df_iso <- df_tidy %>%
+  filter(., isotope == "M_0" | isotope == "M_1") %>%
   group_by(protein, peptide, isotope, sex, leg)
 
-df_messy <- df_T0 %>%
-  spread(., "isotope", "abundance") %>%
+df_messy <- df_iso %>%
+  spread(., "isotope", "abundance")
+
+df_messy <- as.data.frame(df_messy)
+
+df_avg <- df_messy %>%
+  group_by(protein, peptide, sex, leg, week) %>%
+  summarize(., M_0 = mean(M_0, na.rm = TRUE), M_1 = mean(M_1, na.rm = TRUE)) %>%
   mutate(., m1_m0_r = M_1 / M_0)
 
-# how do we do this in r in a tidy_df?? !!!!!!!!!
 
-iso_ratio <- function(dat){
-  result <- dat$abundance[which(dat$isotope == "M_1")] / 
-    dat$abundance[which(dat$isotope == "M_0")]
-  result <- as.data.frame(result)
-  return(result)
-}
+ratios <- NULL
 
-df_T0 <- df_tidy %>%
-  filter(., week == 8.0 & isotope == "M_0" | week == 8 & isotope == "M_1") %>%
-  group_by(protein, peptide, isotope, sex, leg) %>%
-  do(iso_ratio(.))
+for (i in 1:nrow(df_avg)){
+  
+  t0_ratio <- df_avg$m1_m0_r[which(df_avg$protein == df_avg$protein[i] & 
+                                   df_avg$peptide == df_avg$peptide[i] &
+                                   df_avg$sex == df_avg$sex[i] & 
+                                   df_avg$leg == df_avg$leg[i] & 
+                                   df_avg$week == 8)]
+  
+  which(df_avg$protein == df_avg$protein[i] & 
+        df_avg$peptide == df_avg$peptide[i] &
+        df_avg$sex == df_avg$sex[i] & 
+        df_avg$leg == df_avg$leg[i] & 
+        df_avg$week == 8)
+  
+  temp <- (df_avg$M_1[i] - (t0_ratio * df_avg$M_0[i])) / 
+    (df_avg$M_0[i] + (df_avg$M_1[i] - (t0_ratio * df_avg$M_0[i])))
+  
+  ratios <- c(ratios, temp)
 
+  }
 
-
-
-
-
+df_avg$ratio_cor <- ratios
 
