@@ -31,25 +31,26 @@ df_tidy$week <- as.numeric(df_tidy$week) - 8
 # m1_m0_r ratio calculation using messy data
 
 df_iso <- df_tidy %>%
-  filter(., isotope == "M_0" | isotope == "M_1") %>%
+  filter(., isotope == "M_0" | isotope == "M_1" | isotope == "M_2" | 
+           isotope == "M_3") %>%
   group_by(protein, peptide, isotope, sex, leg)
 
 df_messy <- df_iso %>%
-  spread(., "isotope", "abundance")
-
-df_messy <- as.data.frame(df_messy)
+  spread(., "isotope", "abundance") %>%
+  as.data.frame(.)
 
 df_avg <- df_messy %>%
   group_by(protein, peptide, sex, leg, week) %>%
-  summarize(., M_0 = mean(M_0, na.rm = TRUE), M_1 = mean(M_1, na.rm = TRUE)) %>%
-  mutate(., m1_m0_r = M_1 / M_0)
+  summarize(., M_0 = mean(M_0, na.rm = TRUE), M_1 = mean(M_1, na.rm = TRUE),
+            M_2 = mean(M_2, na.rm = TRUE), M_3 = mean(M_3, na.rm = TRUE)) %>%
+  mutate(., m1_m0_r = (M_1 + M_2 + M_3) / M_0)
 
 df_messy <- df_messy %>%
-  mutate(., m1_m0_r = M_1 / M_0)
+  mutate(., m1_m0_r = (M_1 + M_2 + M_3) / M_0)
 
-df_avg$ratio <- iso_ratio_calc(df_avg)
+df_avg$ratio <- iso_ratio_calc2(df_avg)
 
-df_messy$ratio <- iso_ratio_calc(df_messy)
+df_messy$ratio <- iso_ratio_calc2(df_messy)
 
 # plot and run a non-linear regression -----------------------------------------
 
@@ -84,7 +85,7 @@ for (pro in pros){
     }
 }
 
-pdf("plot_F_w8_w11_iso_ratios_all.pdf", width = 10.75, height = 6)
+pdf("plot_F_w8_w11_iso_ratios_all_test.pdf", width = 10.75, height = 6)
 
 for(i in 1:length(plot_list)){
   print(plot_list[[i]])

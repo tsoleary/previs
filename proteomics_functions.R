@@ -504,3 +504,29 @@ iso_ratio_calc <- function(dat){
   return(ratios)
   
 }
+
+# corrected m0/(m0+m1)
+iso_ratio_calc2 <- function(dat){
+  
+  ratios <- NULL
+  
+  for (i in 1:nrow(dat)){
+    
+    t0_ratio <- mean(dat$m1_m0_r[which(dat$protein == dat$protein[i] & 
+                                         dat$peptide == dat$peptide[i] &
+                                         dat$sex == dat$sex[i] & 
+                                         dat$leg == dat$leg[i] & 
+                                         dat$week == 0)], na.rm = TRUE)
+    
+    temp <- (dat$M_1[i] + dat$M_2[i] + dat$M_3[i] - (t0_ratio * dat$M_0[i])) / 
+      (dat$M_0[i] + (dat$M_1[i] + dat$M_2[i] + dat$M_3[i] - 
+                       (t0_ratio * dat$M_0[i])))
+    
+    ratios <- c(ratios, temp)
+    
+  }
+  
+  return(ratios)
+  
+}
+
