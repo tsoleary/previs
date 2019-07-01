@@ -458,3 +458,49 @@ mega_model <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, time){
   
   return(mod)
 }
+
+# D2O Turnover functions
+
+# plot isotopic ratios 
+plot_iso_r <- function(dat, g_title, g_subtitle, FUN = geom_jitter){
+  
+  g <- ggplot(dat, aes(x = week, y = ratio)) +
+    FUN(mapping = aes(x = week, y = ratio, fill = leg), 
+        alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
+    geom_smooth(method = "nls", formula = y ~ SSasymp(x, yf, y0, log_alpha),
+                data = dat,
+                se = FALSE,
+                aes(color = leg), show.legend = FALSE) +
+    labs(title = g_title, subtitle = g_subtitle, 
+         x = "Week", y = "M0/(M0+M1)\nCorrected", 
+         fill = "Leg") +
+    expand_limits(x = 0, y = 0) +
+    theme_classic()
+  
+  return(g)
+  
+}
+
+# corrected m0/(m0+m1)
+iso_ratio_calc <- function(dat){
+  
+  ratios <- NULL
+  
+  for (i in 1:nrow(dat)){
+    
+    t0_ratio <- mean(dat$m1_m0_r[which(dat$protein == dat$protein[i] & 
+                                         dat$peptide == dat$peptide[i] &
+                                         dat$sex == dat$sex[i] & 
+                                         dat$leg == dat$leg[i] & 
+                                         dat$week == 0)], na.rm = TRUE)
+    
+    temp <- (dat$M_1[i] - (t0_ratio * dat$M_0[i])) / 
+      (dat$M_0[i] + (dat$M_1[i] - (t0_ratio * dat$M_0[i])))
+    
+    ratios <- c(ratios, temp)
+    
+  }
+  
+  return(ratios)
+  
+}
