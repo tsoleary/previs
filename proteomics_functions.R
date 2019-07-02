@@ -533,14 +533,16 @@ k_yf <- function(nls_df, leg) {
     substitute(
       italic(k) ~ "=" ~ k_val,
       list(
-        k_val = as.character(signif(x$k[which(x$leg == leg)], digits = 3))
+        k_val = as.character(signif(nls_df$k[which(nls_df$leg == leg)], 
+                                    digits = 3))
       )
     )
   yf <- 
     substitute(
       italic(yf) ~ "=" ~ yf_val,
       list(
-        yf_val = as.character(round(x$yf[which(x$leg == leg)], digits = 2))
+        yf_val = as.character(round(nls_df$yf[which(nls_df$leg == leg)], 
+                                    digits = 2))
       )
     )
   result <- c(as.character(as.expression(k)), as.character(as.expression(yf)))

@@ -69,25 +69,6 @@ df_g <- filter(df_messy, protein == "Shared Myosin" & peptide == "DTQLHLDDALR")
 
 plot_iso_r(df_g, g_title = "Protein", g_subtitle = "PEPTIDE")
 
-
-# fit out put from http://douglas-watson.github.io/post/2018-09_exponential_curve_fitting/
-x <- df_g %>%
-  group_by(leg) %>%
-  do(fit = nls(ratio ~ SSasymp(week, yf, y0, log_k), data = .)) %>%
-  tidy(fit) %>%
-  select(leg, term, estimate) %>%
-  spread(term, estimate) %>%
-  mutate(k = exp(log_k))
-
-
-L_k <- x$k[which(x$leg == "L")]
-R_k <- x$k[which(x$leg == "R")]
-L_yf <- x$yf[which(x$leg == "L")]
-R_yf <- x$yf[which(x$leg == "R")]
-
-
-
-
 # plot all proteins and peptides
 
 pros <- as.character(unique(df_messy$protein))
@@ -99,20 +80,17 @@ for (pro in pros){
   peps <- as.character(unique(pro_df$peptide))
     for (pep in peps){
       pep_df <- filter(pro_df, peptide == pep)
-      
-      
-      
-      
-      g <- plot_iso_r(pep_df, g_title = pro, g_subtitle = pep)
+      tryCatch({
+        g <- plot_iso_r(pep_df, g_title = pro, g_subtitle = pep)
+      }, error = function(error){})
       plot_list[[pep]] <- g
     }
 }
 
-pdf("plot_F_w8_w11_iso_ratios_all_test.pdf", width = 10.75, height = 6)
+pdf("test.pdf", width = 10.75, height = 6)
 
 for(i in 1:length(plot_list)){
   print(plot_list[[i]])
 }
 
 dev.off() # pdf file will appear in working directory
-
