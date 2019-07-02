@@ -462,21 +462,42 @@ mega_model <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, time){
 # D2O Turnover functions
 
 # plot isotopic ratios 
-plot_iso_r <- function(dat, g_title, g_subtitle, FUN = geom_jitter){
+plot_iso_r <- function(dat, g_title, g_subtitle, FUN = geom_jitter, 
+                       x_pos = 3.35, y_pos1 = 0.83, y_pos2 = 0.30){
+  
+  df <- dat %>%
+    group_by(leg) %>%
+    do(fit = nls(ratio ~ SSasymp(week, yf, y0, log_k), data = .)) %>%
+    tidy(fit) %>%
+    select(leg, term, estimate) %>%
+    spread(term, estimate) %>%
+    mutate(k = exp(log_k))
+  
+  L_k_yf <- k_yf(df, "L")
+  R_k_yf <- k_yf(df, "R")
   
   g <- ggplot(dat, aes(x = week, y = ratio)) +
     FUN(mapping = aes(x = week, y = ratio, fill = leg), 
         alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
-    geom_smooth(method = "nls", formula = y ~ SSasymp(x, yf, y0, log_alpha),
+    geom_smooth(method = "nls", formula = y ~ SSasymp(x, yf, y0, log_k),
                 data = dat,
                 se = FALSE,
                 aes(color = leg), show.legend = FALSE) +
+    annotate("text", x = x_pos, y = (y_pos1)*(max(dat$ratio)), 
+             label = L_k_yf[1], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = x_pos, y = (y_pos1 - 0.07)*(max(dat$ratio)), 
+             label = L_k_yf[2], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = x_pos, y = (y_pos2)*(max(dat$ratio)), 
+             label = R_k_yf[1], parse = TRUE, color = "#53D3D7") +
+    annotate("text", x = x_pos, y = (y_pos2 - 0.07)*(max(dat$ratio)), 
+             label = R_k_yf[2], parse = TRUE, color = "#53D3D7") +
     labs(title = g_title, subtitle = g_subtitle, 
-         x = "Week", y = "M0/(M0+M1)\nCorrected", 
+         x = "Week", y = "Isotopic Ratio\nCorrected", # change later!
          fill = "Leg") +
     expand_limits(x = 0, y = 0) +
-    theme_classic()
-  
+    theme_classic() +    
+    coord_cartesian(xlim = c(0, 3), clip = 'off') +
+    theme(plot.margin = unit(c(1, 2.25, 1, 1), "lines"))
   return(g)
   
 }
@@ -488,31 +509,7 @@ iso_ratio_calc <- function(dat){
   
   for (i in 1:nrow(dat)){
     
-    t0_ratio <- mean(dat$m1_m0_r[which(dat$protein == dat$protein[i] & 
-                                         dat$peptide == dat$peptide[i] &
-                                         dat$sex == dat$sex[i] & 
-                                         dat$leg == dat$leg[i] & 
-                                         dat$week == 0)], na.rm = TRUE)
-    
-    temp <- (dat$M_1[i] - (t0_ratio * dat$M_0[i])) / 
-      (dat$M_0[i] + (dat$M_1[i] - (t0_ratio * dat$M_0[i])))
-    
-    ratios <- c(ratios, temp)
-    
-  }
-  
-  return(ratios)
-  
-}
-
-# corrected m0/(m0+m1)
-iso_ratio_calc2 <- function(dat){
-  
-  ratios <- NULL
-  
-  for (i in 1:nrow(dat)){
-    
-    t0_ratio <- mean(dat$m1_m0_r[which(dat$protein == dat$protein[i] & 
+    t0_ratio <- mean(dat$t0_r[which(dat$protein == dat$protein[i] & 
                                          dat$peptide == dat$peptide[i] &
                                          dat$sex == dat$sex[i] & 
                                          dat$leg == dat$leg[i] & 
@@ -530,3 +527,22 @@ iso_ratio_calc2 <- function(dat){
   
 }
 
+# get the k and yf value into an equation to be put on graph 
+k_yf <- function(nls_df, leg) {
+  k <-
+    substitute(
+      italic(k) ~ "=" ~ k_val,
+      list(
+        k_val = as.character(signif(x$k[which(x$leg == leg)], digits = 3))
+      )
+    )
+  yf <- 
+    substitute(
+      italic(yf) ~ "=" ~ yf_val,
+      list(
+        yf_val = as.character(round(x$yf[which(x$leg == leg)], digits = 2))
+      )
+    )
+  result <- c(as.character(as.expression(k)), as.character(as.expression(yf)))
+  return(result)
+}
