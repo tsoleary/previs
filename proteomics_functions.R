@@ -541,7 +541,7 @@ k_yf <- function(nls_df, leg) {
     substitute(
       italic(yf) ~ "=" ~ yf_val,
       list(
-        yf_val = as.character(round(nls_df$yf[which(nls_df$leg == leg)], 
+        yf_val = as.character(signif(nls_df$yf[which(nls_df$leg == leg)], 
                                     digits = 2))
       )
     )
