@@ -459,7 +459,7 @@ mega_model <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, time){
   return(mod)
 }
 
-# D2O Turnover functions
+# D2O Turnover functions -------------------------------------------------------
 
 # plot isotopic ratios 
 plot_iso_r <- function(dat, g_title, g_subtitle, FUN = geom_jitter, 
@@ -548,3 +548,33 @@ k_yf <- function(nls_df, leg) {
   result <- c(as.character(as.expression(k)), as.character(as.expression(yf)))
   return(result)
 }
+
+# plot the isotopic distribution changing over time
+plot_all_isos <- function(dat, g_title, g_subtitle, FUN = geom_jitter){
+  g <- ggplot(dat, aes(x = isotope, y = abundance)) + 
+    FUN(mapping = aes(x = isotope, y = abundance, fill = week), 
+        alpha = 0.5, size = 3, pch = 21, color = "black", width = 0.01) +
+    scale_fill_brewer(palette = "Spectral") +
+    labs(title = g_title, subtitle = g_subtitle, 
+         x = "Isotopomer", y = "Abundance\n(% Total)",
+         fill = "Week") + 
+    theme_bw() +
+    facet_wrap( ~ dat$leg) +
+    theme(strip.background = element_rect(color = "black", fill = "#53D3D7"))
+  return(g)
+}
+
+# normalize isotope columns
+norm_iso <- function(dat){
+  isotopes <- colnames(dat)[grep("M_", colnames(dat))]
+  df <- NULL
+  for(iso in isotopes){
+    temp <- dat[iso]/dat["Sum"]
+    df <- c(df, temp)
+  }
+  df <- as.data.frame(df)
+  colnames(df) <- paste0(isotopes, "_norm")
+  dat <- cbind(dat, df)
+}
+
+

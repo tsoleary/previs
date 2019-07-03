@@ -3,81 +3,67 @@
 library(tidyverse)
 library(broom)
 library(RColorBrewer)
-
 # source the functions in the proteomics_functions.R script!
 
 setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 
 # Tidy the data ----------------------------------------------------------------
 
-df_messy <- read.csv("kowalski_F_week_8_11_Myh_Hist_062819_isotopes.csv")
+df_raw <- read.csv("kowalski_F_week_8_11_Myh_Hist_062819_isotopes.csv")
 
-samples <- colnames(df_messy)[4:length(colnames(df_messy))]
+samples <- colnames(df_raw)[4:length(colnames(df_raw))]
 
-df_tidy <- df_messy %>% 
+df_tidy <- df_raw %>% 
   gather(sample, abundance, samples) %>%
   separate("sample", c("sex", "mouse", "leg", "week"), sep = "_")
 
 df_tidy$week <- as.numeric(df_tidy$week) - 8
 
-# # average together the mice legs in the same week lines for each peptide
-# df <- df_tidy %>%
-#   group_by(protein, peptide, isotope, sex, leg, week) %>%
-#   summarize(abundance = mean(abundance, na.rm = TRUE))
+# average together the mice legs in the same week lines for each peptide
+df_tidy <- df_tidy %>%
+  group_by(protein, peptide, isotope, sex, leg, week) %>%
+  summarize(abundance = mean(abundance, na.rm = TRUE))
 
+# spread out by isotope and add normalization to sum columns
+df <- df_tidy %>%
+  spread(., "isotope", "abundance") %>%
+  as.data.frame(.) %>%
+  norm_iso(.)
+
+# ratio calculation ------------------------------------------------------------
+
+# corrected ratio
 #     (M_1 - (M_1/M_0(T0)) * M_0))
 # -------------------------------------
 # (M_0 + (M_1 - ((M_1/M_0(T0)) * M_0)))
 
-
-# more corrected
+# more corrected ratio
 #     (M_1 + M_2 + M_3 - ((M_1 + M_2 + M_3)/M_0(T0)) * M_0))
-# -------------------------------------
+# -------------------------------------------------------------
 # (M_0 + (M_1 + M_2 + M_3 - ((M_1 + M_2 + M_3)/M_0(T0)) * M_0)))
 
-# m1_m0_r ratio calculation using messy data
-
-df_iso <- df_tidy %>%
-  filter(., isotope == "M_0" | isotope == "M_1" | isotope == "M_2" | 
-           isotope == "M_3") %>%
-  group_by(protein, peptide, isotope, sex, leg)
-
-df_messy <- df_iso %>%
-  spread(., "isotope", "abundance") %>%
-  as.data.frame(.)
-
-df_avg <- df_messy %>%
+# t0_r calculation
+df <- df %>%
   group_by(protein, peptide, sex, leg, week) %>%
-  summarize(., M_0 = mean(M_0, na.rm = TRUE), M_1 = mean(M_1, na.rm = TRUE),
-            M_2 = mean(M_2, na.rm = TRUE), M_3 = mean(M_3, na.rm = TRUE)) %>%
-  mutate(., t0_r = (M_1 + M_2 + M_3) / M_0)
+  mutate(., t0_r = (M_1_norm + M_2_norm + M_3_norm) / M_0_norm)
 
-df_messy <- df_messy %>%
-  mutate(., t0_r = (M_1 + M_2 + M_3) / M_0)
+# corrected ratio calculation
+df$ratio <- iso_ratio_calc(df)
+df <- filter(df, is.na(ratio) != TRUE)
 
-df_avg$ratio <- iso_ratio_calc(df_avg)
-
-df_messy$ratio <- iso_ratio_calc(df_messy)
-
-df_avg <- filter(df_avg, is.na(ratio) != TRUE)
-
-df_messy <- filter(df_messy, is.na(ratio) != TRUE)
-
-# plot and run a non-linear regression -----------------------------------------
+# plot and run a non-linear regression for the corrected isotope ratio ---------
 
 # filter for learning!
-df_g <- filter(df_messy, protein == "Shared Myosin" & peptide == "DTQLHLDDALR")
-
+df_g <- filter(df, protein == "Shared Myosin" & peptide == "DTQLHLDDALR")
 plot_iso_r(df_g, g_title = "Protein", g_subtitle = "PEPTIDE")
 
 # plot all proteins and peptides
-
-pros <- as.character(unique(df_messy$protein))
+pros <- as.character(unique(df$protein))
 
 plot_list <- list()
 
 for (pro in pros){
-  pro_df <- filter(df_messy, protein == pro)
+  pro_df <- filter(df, protein == pro)
   peps <- as.character(unique(pro_df$peptide))
     for (pep in peps){
       pep_df <- filter(pro_df, peptide == pep)
@@ -88,7 +74,7 @@ for (pro in pros){
     }
 }
 
-pdf("test.pdf", width = 10.75, height = 6)
+pdf("plot_F_w8_w_11_syn_deg_curve_all.pdf", width = 10.75, height = 6)
 
 for(i in 1:length(plot_list)){
   print(plot_list[[i]])
@@ -96,88 +82,26 @@ for(i in 1:length(plot_list)){
 
 dev.off() # pdf file will appear in working directory
 
-# plot the changing isotopic distribution over time :)!
+# plot the changing isotopic distribution over time ----------------------------
 
-# group by week,
+# tidy the data frame back by isotope
+df_iso <- df %>%
+  gather(., isotope, abundance, colnames(.)[grep("_norm", colnames(.))]) 
 
-df_all <- df_tidy %>%
-  spread(., "isotope", "abundance") %>%
-  as.data.frame(.)
+df_iso$isotope <- gsub("_norm", "", df_iso$isotope)
+df_iso <- df_iso[!is.nan(df_iso$abundance), ]
+df_iso$week <- as.character(df_iso$week)
 
-# normalize isotope columns
-norm_iso <- function(dat){
-  isotopes <- colnames(dat)[grep("M_", colnames(dat))]
-  df <- NULL
-  for(iso in isotopes){
-    temp <- dat[iso]/dat["Sum"]
-    df <- c(df, temp)
-  }
-  df <- as.data.frame(df)
-  colnames(df) <- paste0(isotopes, "_norm")
-  dat <- cbind(dat, df)
-}
-
-df_all <- norm_iso(df_all)
-
-
-# average the mice within a week
-
-df_iso_avg <- df_all %>%
-  group_by(protein, peptide, leg, sex, week) %>%
-  summarize(., M_0 = mean(M_0_norm, na.rm = TRUE), 
-            M_1 = mean(M_1_norm, na.rm = TRUE), 
-            M_2 = mean(M_2_norm, na.rm = TRUE),
-            M_3 = mean(M_3_norm, na.rm = TRUE), 
-            M_4 = mean(M_4_norm, na.rm = TRUE), 
-            M_5 = mean(M_5_norm, na.rm = TRUE)) %>%
-  gather(., isotope, abundance, colnames(.)[grep("M_", colnames(.))])
-
-df_iso_avg <- as.data.frame(df_iso_avg)
-
-df_iso_avg <- df_iso_avg[!is.nan(df_iso_avg$abundance), ]
-
-df_iso_avg$week <- as.character(df_iso_avg$week)
-
-ggplot(df_iso_avg, aes(x = isotope, y = abundance)) + 
-  geom_point(mapping = aes(x = isotope, y = abundance, fill = week), 
-             alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
-  scale_fill_brewer(palette = "Spectral") +
-  labs(title = "Protein", subtitle = "PEPTIDE", 
-       x = "Isotopomer", y = "Abundance\n(% Total)",
-       fill = "Week") +
-  theme_classic()
-
-
-
-# function to plot 
-plot_all_isos <- function(dat, g_title, g_subtitle, FUN = geom_jitter){
-  g <- ggplot(dat, aes(x = isotope, y = abundance)) + 
-    FUN(mapping = aes(x = isotope, y = abundance, fill = week), 
-        alpha = 0.5, size = 3, pch = 21, color = "black", width = 0.01) +
-    scale_fill_brewer(palette = "Spectral") +
-    labs(title = g_title, subtitle = g_subtitle, 
-         x = "Isotopomer", y = "Abundance\n(% Total)",
-         fill = "Week") + 
-    theme_bw() +
-    facet_wrap( ~ dat$leg) +
-    theme(strip.background = element_rect(color = "black", fill = "#53D3D7"))
-  return(g)
-}
-
-plot_all_isos(df_iso_avg, "PRO", "PEP")
-
-df_g <- filter(df_iso_avg, protein == "Hist2h4", peptide == "DAVTYTEHAK")
-
+#filter for learning
+df_g <- filter(df_iso, protein == "Hist2h4", peptide == "DAVTYTEHAK")
 plot_all_isos(df_g, "PRO", "PEP")
 
-
-
-pros <- as.character(unique(df_iso_avg$protein))
-
+# plot the isotope distribution for each peptide changing over time
+pros <- as.character(unique(df$protein))
 plot_list <- list()
 
 for (pro in pros){
-  pro_df <- filter(df_iso_avg, protein == pro)
+  pro_df <- filter(df_iso, protein == pro)
   peps <- as.character(unique(pro_df$peptide))
   for (pep in peps){
     pep_df <- filter(pro_df, peptide == pep)
@@ -186,7 +110,7 @@ for (pro in pros){
   }
 }
 
-pdf("test.pdf", width = 10.75, height = 6)
+pdf("plot_F_w8_w_11_isotopomer.pdf", width = 10.75, height = 6)
 
 for(i in 1:length(plot_list)){
   print(plot_list[[i]])
