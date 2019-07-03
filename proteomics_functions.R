@@ -323,13 +323,13 @@ pep_iso <- function (pep, max_iso = 9, charge = 1){
 }
 
 # deg_syn function
-deg_syn <- function (df, deg, syn, initial, D3_pep, D3_i){
+deg_syn <- function (dat, deg, syn, initial, D3_pep, D3_i){
   
   temp <- NULL
   list <- NULL
   D3_syn <- syn * D3_pep[D3_i + 1]
   
-  for (i in 1:((nrow(df) - 1))){
+  for (i in 1:((nrow(dat) - 1))){
     if (is.null(temp) == TRUE){
       temp <- initial
       list<- c(temp)

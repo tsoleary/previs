@@ -2,8 +2,7 @@
 # HCM DIS GOL samples
 
 library(tidyverse)
-
-# source the functions in the proteomics_functions.R script!
+source("C:/Users/PrevBeast/Documents/GitHub/Previs/proteomics_functions.R")
 
 setwd("C:/Users/PrevBeast/Documents/R/HCM")
 

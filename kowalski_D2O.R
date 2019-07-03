@@ -3,7 +3,7 @@
 library(tidyverse)
 library(broom)
 library(RColorBrewer)
-# source the functions in the proteomics_functions.R script!
+source("C:/Users/PrevBeast/Documents/GitHub/Previs/proteomics_functions.R")
 
 setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 
@@ -110,7 +110,7 @@ for (pro in pros){
   }
 }
 
-pdf("plot_F_w8_w_11_isotopomer.pdf", width = 10.75, height = 6)
+pdf("plot_F_w8_w_11_isotopomer.pdf", width = 10.75, height = 5)
 
 for(i in 1:length(plot_list)){
   print(plot_list[[i]])

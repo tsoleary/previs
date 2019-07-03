@@ -2,8 +2,7 @@
 # Markus Meyer HFpEF samples
 
 library(tidyverse)
-
-# source the functions in the proteomics_functions.R script!
+source("C:/Users/PrevBeast/Documents/GitHub/Previs/proteomics_functions.R")
 
 setwd("C:/Users/PrevBeast/Documents/R/Meyer")
 data_raw <- read.csv("meyer_all_peptides.csv")
