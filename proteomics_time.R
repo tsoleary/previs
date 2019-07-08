@@ -6,7 +6,7 @@ source("C:/Users/PrevBeast/Documents/GitHub/Previs/proteomics_functions.R")
 setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 
 # read in the data.frame with the top 3 avg for each protein & each sample
-protein <- read.csv("kowalski_F_w1_w8_no_norm_r.csv")
+protein <- read.csv("kowalski_M_week_1_8_top_3_abund_norm_sum_total_r.csv")
 protein$X <- NULL 
 
 # colnames should only have File_Leg_Sex_Week
@@ -37,6 +37,22 @@ df <- df %>%
 df <- df %>%
   group_by(Master.Protein.Accessions, sex) %>%
   do(filter(., length(unique(leg)) > 1))
+
+# spread out df to make an excel file of the numbers with the data that we graph
+
+df_L_R <- df %>%
+  spread(., "leg", "abundance")
+
+library(data.table)
+
+df_csv <- dcast(setDT(df_L_R), Master.Protein.Accessions ~ week, 
+                 value.var = c("L", "R")) 
+
+gene_df <- read.csv("Kowalski_M_week_1_8_gene_names.csv")
+
+df_csv$gene <- mpa_to_gene(df_csv, gene_df)
+
+write.csv(df_csv, "kowalski_M_w1_w8_med_protein_time_r.csv")
 
 # for linear fit data frame ----------------------------------------------------
 # # need to first make a plot of the whole thing
