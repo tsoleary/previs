@@ -39,7 +39,7 @@ proteome <- function(dat, group_names, file_gene, samp_id = "F", top_pep = 3, mi
   
   
   # do normalization if indicated
-  if (norm == FALSE){
+  if (norm == TRUE){
     
     if (norm_method == "sum_total") {
     norm_value <- colSums(df[, wt_grp], na.rm = TRUE)
@@ -89,5 +89,5 @@ proteome <- function(dat, group_names, file_gene, samp_id = "F", top_pep = 3, mi
 
 
 
-x <- proteome(data_raw, "norm", "Kowalski_F_w1_w8_gene_names.csv")
+x <- proteome(data_raw, group_names = "F_", file_gene = "Kowalski_F_w1_w8_gene_names.csv", norm = FALSE)
 
