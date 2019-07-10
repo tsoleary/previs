@@ -3,17 +3,16 @@
 library(tidyverse)
 source("C:/Users/PrevBeast/Documents/GitHub/Previs/proteomics_functions.R")
 
-# location that the all peptides csv is in
-setwd("/Users/tsoleary/previs")
+# location that the all_peptides.csv is in
+setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 
-# file name of the all peptides csv
-data_raw <- read.csv("WT vs KO all pep.csv")
+# file name of the all_peptides.csv
+data_raw <- read.csv("Kowalski_F_w1_w8_all_peptides.csv")
 
 
-proteome <- function(dat, group_names, samp_id = "F", top_pep = 3, min_pep = 3,
+proteome <- function(dat, group_names, file_gene, samp_id = "F", top_pep = 3, min_pep = 3,
                      norm = FALSE, 
-                     norm_method = "sum_total", norm_pro = NULL,
-                     group_names, file_gene){
+                     norm_method = "sum_total", norm_pro = NULL){
   
   # check the arguments to make sure they are all in the correct format
   
@@ -79,8 +78,8 @@ proteome <- function(dat, group_names, samp_id = "F", top_pep = 3, min_pep = 3,
 
   pro_df$gene <- mpa_to_gene(pro_df, read.csv(file_gene))
   
-  protein$peptides <- table(dat$Master.Protein.Accessions)
-  protein <- filter(protein, protein$peptides >= min_pep)
+  pro_df$peptides <- table(dat$Master.Protein.Accessions)
+  pro_df <- filter(pro_df, pro_df$peptides >= min_pep)
   
   write.csv(pro_df, 
             paste0("r_output_", format(Sys.time(), "%d %b %Y"), ".csv"))
@@ -90,5 +89,5 @@ proteome <- function(dat, group_names, samp_id = "F", top_pep = 3, min_pep = 3,
 
 
 
-x <- proteome(data_raw)
+x <- proteome(data_raw, "norm", "Kowalski_F_w1_w8_gene_names.csv")
 
