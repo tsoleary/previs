@@ -4,41 +4,69 @@ library(tidyverse)
 source("C:/Users/PrevBeast/Documents/GitHub/Previs/proteomics_functions.R")
 
 # location that the all_peptides.csv is in
+setwd("/Users/tsoleary/previs")
 setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 
-# file name of the all_peptides.csv
-data_raw <- read.csv("Kowalski_F_w1_w8_all_peptides.csv")
-
-
-proteome <- function(dat, group_names, file_gene, samp_id = "F", top_pep = 3, min_pep = 3,
-                     norm = FALSE, 
-                     norm_method = "sum_total", norm_pro = NULL){
+# whole proteome ---------------------------------------------------------------
+proteome <- function(file_name, organism, 
+                     wt_samps = "all", group_names = NULL, group = FALSE,
+                     top_pep = 3, min_pep = 3,
+                     norm = FALSE, norm_method = NULL, norm_pro = NULL,
+                     csv = FALSE){
   
-  # check the arguments to make sure they are all in the correct format
+  # import data frame
+  dat <- read.csv(file_name)
   
-  # data frame check
+  # data frame format check
   if (colnames(dat)[1] != "Annotated.Sequence" &
       colnames(dat)[2] != "Modifications" &
       colnames(dat)[3] != "Master.Protein.Accessions")
-    stop("invalid data frame: must have Annotated.Sequence, Modifications, 
+    stop ("invalid data frame: must have Annotated.Sequence, Modifications, 
          Master.Protein.Accessions")
   
-  #samp_id check
+  # # import gene accession ####need to fix paths for PREVIS computer!!!
+  # if (organism == "mouse") {
+  # gene_df <- read.csv(
+  #   "C:/Users/PrevBeast/Documents/Fasta Files/mouse_fasta_gene_accession.csv")
+  # }
+  # if (organism == "human"){
+  #   gene_df <- read.csv(
+  #     "C:/Users/PrevBeast/Documents/Fasta Files/human_fasta_gene_accession.csv")
+  # }
+  # if (organism != "mouse" & organism != "human")
+  #   stop ("only human or mouse organism currently supported")
   
-  # top_pep
-  
-  
+  # import gene accession
+  if (organism == "mouse") {
+  gene_df <- read.csv(
+    "/Users/tsoleary/previs/mouse_PD_accession_gene.csv")
+  }
+  if (organism == "human"){
+    gene_df <- read.csv(
+      "C:/Users/PrevBeast/Documents/Fasta Files/human_fasta_gene_accession.csv")
+  }
+  if (organism != "mouse" & organism != "human")
+    stop ("only human or mouse organism currently supported")
+
   
   # determine the top ionizers and sort by them taking only the top_pep
-  wt_grp <- grep(samp_id, colnames(dat))
-  dat$wt_grp_med <- by_group(dat, wt_grp)
+  if (wt_samps == "all"){
+    wt_grp <- 4:ncol(dat)
+  } else {
+    if (sum(grepl("F", colnames(dat))) < 1)
+      stop ("wt_samps must be a pattern that is present in the sample 
+           (column) names that are being used to weight the top ionizers")
+    wt_grp <- grep(wt_samps, colnames(dat))
+  }
+  
+  dat$wt_grp <- by_group(dat, wt_grp)
   
   df <- tbl_df(dat) %>%
     group_by(Master.Protein.Accessions) %>%
-    top_n(n = top_pep, wt = wt_grp_med)
+    top_n(n = top_pep, wt = wt_grp)
   
   
-  # do normalization if indicated
+  # do normalization if indicated --------
   if (norm == TRUE){
     
     if (norm_method == "sum_total") {
@@ -70,24 +98,70 @@ proteome <- function(dat, group_names, file_gene, samp_id = "F", top_pep = 3, mi
     
     }
   }
-
   
-  pro_df <- by_protein(df, colnames(df)[grep(group_names, colnames(df))]) %>%
-    as.data.frame %>%
-    rownames_to_column("Master.Protein.Accessions")
+  df <- as.data.frame(df)
+  
+  # grouping
+  if (group == FALSE & norm == FALSE){
+    group_names <- "F"
+  }
+  
+  if (group == TRUE){
+    for (i in 1:length(group_names)){
+      
+      if (norm == TRUE){
+        pat <- paste0(group_names[i], "_norm")
+      } else {
+        pat <- group_names[i]
+      }
+      
+      samp_col_group <- grep(pat, colnames(df))
+      
+      df[, paste0(group_names[i], "_med")] <- by_group(df, samp_col_group)
+      
+    }
+      pro_df <- by_protein(df, colnames(df)[grep("_med", colnames(df))]) %>%
+        as.data.frame %>%
+        rownames_to_column("Master.Protein.Accessions")
+      
+      colnames(pro_df) <- sub("_med", "", colnames(pro_df))
+  } else {
+    
+    all <- colnames(dat)[-c(1,2,3,length(dat))]
+    
+    pro_df <- by_protein(df, all) %>%
+      as.data.frame %>%
+      rownames_to_column("Master.Protein.Accessions")
+    
+  }
 
-  pro_df$gene <- mpa_to_gene(pro_df, read.csv(file_gene))
+  pro_df$gene <- mpa_to_gene(pro_df, gene_df)
   
   pro_df$peptides <- table(dat$Master.Protein.Accessions)
   pro_df <- filter(pro_df, pro_df$peptides >= min_pep)
   
-  write.csv(pro_df, 
-            paste0("r_output_", format(Sys.time(), "%d %b %Y"), ".csv"))
+  col_order <- c("gene", "Master.Protein.Accessions", "peptides",
+                 colnames(pro_df)[2:(length(colnames(pro_df))-2)])
+
+  pro_df <- pro_df[, col_order]
   
+  colnames(pro_df)[1] <- "Gene"
+  colnames(pro_df)[2] <- "Accession"
+  colnames(pro_df)[3] <- "# of peptides"
+  
+  pro_df <- filter(pro_df, Accession != "")
+  
+  if (csv == TRUE){
+    write.csv(pro_df, 
+              paste0("r_output_", norm_method, 
+                     format(Sys.time(), "%d %b %Y %H:%M:%S"),
+                     ".csv"), row.names = FALSE)
+  }
   return(pro_df)
 }
 
+z <- proteome("WT vs KO all pep.csv", group_names = c("WT", "KO"), 
+              organism = "mouse", group = FALSE, norm = TRUE, 
+              norm_method = "protein", norm_pro = "B2RTM0")
 
-
-x <- proteome(data_raw, group_names = "F_", file_gene = "Kowalski_F_w1_w8_gene_names.csv", norm = FALSE)
 
