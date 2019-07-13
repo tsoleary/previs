@@ -153,7 +153,7 @@ proteome <- function(file_name, organism,
   
   if (csv == TRUE){
     write.csv(pro_df, 
-              paste0("r_output_", norm_method, 
+              paste0(gsub(".csv", "", file_name), "_r_",
                      format(Sys.time(), "%d %b %Y %H:%M:%S"),
                      ".csv"), row.names = FALSE)
   }
