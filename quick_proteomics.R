@@ -9,8 +9,14 @@ setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 # check that the all_peptides.csv is in the working directory
 list.files()
 
-z <- proteome("WT vs KO all pep.csv", group_names = c("WT", "KO"), 
-              organism = "mouse", group = FALSE, norm = TRUE, 
-              norm_method = "protein", norm_pro = "B2RTM0")
+proteome("WT vs KO all pep.csv", group_names = c("WT", "KO"), 
+         organism = "mouse", group = TRUE, norm = TRUE, 
+         norm_method = "protein", norm_pro = "B2RTM0", csv = FALSE)
+
+
+
+
+
+
 
 

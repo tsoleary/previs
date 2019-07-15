@@ -127,7 +127,7 @@ proteome <- function(file_name, organism,
                      wt_samps = "all", group_names = NULL, group = FALSE,
                      top_pep = 3, min_pep = 3,
                      norm = FALSE, norm_method = NULL, norm_pro = NULL,
-                     csv = FALSE){
+                     csv = TRUE){
   
   # import data frame
   dat <- read.csv(file_name)
@@ -266,17 +266,17 @@ proteome <- function(file_name, organism,
   
   pro_df <- filter(pro_df, Accession != "")
   
+  file_output <- paste0(gsub(".csv", "", file_name), "_r_",
+                        format(Sys.time(), "%d %b %Y %H:%M:%S"),
+                        ".csv")
+  
   if (csv == TRUE){
-    write.csv(pro_df, 
-              paste0(gsub(".csv", "", file_name), "_r_",
-                     format(Sys.time(), "%d %b %Y %H:%M:%S"),
-                     ".csv"), row.names = FALSE)
+    write.csv(pro_df, file_output, row.names = FALSE)
+    print(paste("result file", file_output ,"is located in", getwd()))
   }
+  pro_df <- as_tibble(pro_df)
   return(pro_df)
 }
-
-
-
 
 
 # proteins changing over time --------------------------------------------------
