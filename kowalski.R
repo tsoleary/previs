@@ -5,7 +5,7 @@ source("C:/Users/PrevBeast/Documents/GitHub/Previs/proteomics_functions.R")
 
 setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 data_raw <- 
-  read.csv("Kowalski_F_w1_w8_all_peptides.csv")
+  read.csv("Kowalski_M_week_1_8_all_peptides.csv")
 
 # Normalization ----------------------------------------------------------------
 
@@ -66,8 +66,10 @@ data <-
 
 # TA muscle mass (mg) and sum-total (one operation)
 
-ta_mass <- read.csv("PSD proteomic sample info F w1_8.csv")
-ta_mass <- ta_mass$TA.mass
+sample_id_mass <- read.csv("PSD proteomic sample info M w1_8.csv")
+ta_mass <- sample_id_mass$TA.mass
+names(ta_mass) <- sample_id_mass$ID
+
 
 norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
 
@@ -98,7 +100,7 @@ protein <- by_protein(data, group_names) %>%
   rownames_to_column("Master.Protein.Accessions")
 
 # Converting protein accession to gene symbol ----------------------------------
-gene_df <- read.csv('Kowalski_F_w1_w8_gene_names.csv')
+gene_df <- read.csv('Kowalski_M_week_1_8_gene_names.csv')
 
 data$gene <- mpa_to_gene(data, gene_df)
 protein$gene <- mpa_to_gene(protein, gene_df)
@@ -108,4 +110,4 @@ min_pep <- 3
 protein$peptides <- table(data_raw$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-write.csv(protein, "kowalski_F_w1_w8_top_3_abund_norm_sum_total_ta_mass_r.csv")
+write.csv(protein, "kowalski_M_w1_w8_top_3_abund_norm_sum_total_ta_mass_r.csv")
