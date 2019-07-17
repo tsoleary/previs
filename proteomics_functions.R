@@ -259,7 +259,7 @@ proteome <- function(file_name, organism,
   pro_df <- dplyr::filter(pro_df, Accession != "")
   
   file_output <- paste0(gsub(".csv", "", file_name), "_r_",
-                        format(Sys.time(), "%d %b %Y %H:%M:%S"),
+                        format(Sys.time(), "_%d_%b_%Y_%H_%M_%S"),
                         ".csv")
   
   if (csv == TRUE){
