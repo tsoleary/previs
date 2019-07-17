@@ -9,12 +9,24 @@ data_raw <-
 
 # Normalization ----------------------------------------------------------------
 
+## Neil muscle mass norm adventure
+
+# data_raw_2 <- data_raw
+# 
+# names(data_raw_2) <- c(names(data_raw_2[, 1:3]),str_extract(names(data_raw_2[, 4:61]), "F[[:digit:]]+")) 
+# names(data_raw_2) <- gsub("F", "", names(data_raw_2))
+# names(data_raw_2) <- c(names(data_raw_2[, 1:3]), str_pad(names(data_raw_2)[4:61], 2, pad = "0"))
+# 
+# str_pad(grep("F[[:digit:]]*", colnames(data_raw_2)), 2, pad = "0")
+#   
+# data_raw_2 <- select(data_raw_2, sort(current_vars()))
+
 ctrl_raw <- grep("F", colnames(data_raw))
 
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
 # set the max number of peptides used in analysis
-max_pep <- 1
+max_pep <- 3
 
 data <-
   tbl_df(data_raw) %>%
@@ -41,12 +53,28 @@ data <-
 # data <- cbind(data, norm_test)
 
 
-# sum of every column
+# # sum of every column
+# norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
+# 
+# raw_abun_mat <- as.matrix(data[, ctrl_raw])
+# 
+# norm_abun <- t(t(raw_abun_mat)/norm_value)
+# colnames(norm_abun) <- paste(colnames(norm_abun), sep = "_", "norm")
+# norm_test <- as.data.frame(norm_abun)
+# data <- as_tibble(data)
+# data <- cbind(data, norm_test)
+
+# TA muscle mass (mg) and sum-total (one operation)
+
+ta_mass <- read.csv("PSD proteomic sample info F w1_8.csv")
+ta_mass <- ta_mass$TA.mass
+
 norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
 
 raw_abun_mat <- as.matrix(data[, ctrl_raw])
 
-norm_abun <- t(t(raw_abun_mat)/norm_value)
+
+norm_abun <- t(t(raw_abun_mat)*ta_mass/norm_value)
 colnames(norm_abun) <- paste(colnames(norm_abun), sep = "_", "norm")
 norm_test <- as.data.frame(norm_abun)
 data <- as_tibble(data)
@@ -80,4 +108,4 @@ min_pep <- 3
 protein$peptides <- table(data_raw$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-write.csv(protein, "kowalski_F_w1_w8_top_1_abund_norm_sum_total_r.csv")
+write.csv(protein, "kowalski_F_w1_w8_top_3_abund_norm_sum_total_ta_mass_r.csv")
