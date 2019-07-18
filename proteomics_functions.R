@@ -148,8 +148,14 @@ proteome <- function(file_name, organism,
     gene_df <- read.csv(
       "C:/Users/PrevBeast/Documents/Fasta Files/Human/human_fasta_accession_gene.csv")
   }
-  if (organism != "mouse" & organism != "human")
-    stop ("only human or mouse organism currently supported")
+  if (organism == "rat"){
+    gene_df <- read.csv(
+      "C:/Users/PrevBeast/Documents/Fasta Files/Rat/rat_fasta_accession_gene.csv")
+  }
+  
+  
+  if (organism != "mouse" & organism != "human" & organism != "rat")
+    stop ("invalid organism name: only human, mouse or rat currently supported")
   
   
   # determine the top ionizers and sort by them taking only the top_pep
@@ -259,7 +265,7 @@ proteome <- function(file_name, organism,
   pro_df <- dplyr::filter(pro_df, Accession != "")
   
   file_output <- paste0(gsub(".csv", "", file_name), "_r_",
-                        format(Sys.time(), "_%d_%b_%Y_%H_%M_%S"),
+                        format(Sys.time(), "%m%d%y%H%M%S"),
                         ".csv")
   
   if (csv == TRUE){
