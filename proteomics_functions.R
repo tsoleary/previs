@@ -81,6 +81,19 @@ mpa_to_gene <- function (dat, gene_dat){
   return(dat$gene)
 }
 
+# Convert PD file identifier to individual identifier
+file_to_ind <- function (dat, sample_dat){
+  dat$individual <- dat$file
+  for (i in 1:nrow(dat)){
+    temp <- which(dat$individual[i] == sample_dat$file, TRUE)
+    if (length(temp) == 1){
+      dat$individual <- gsub(dat$individual[i], sample_dat$individual[temp], dat$individual, fixed = TRUE)
+    }
+  }
+  return(dat$individual)
+}
+
+
 # remove outliers in peptide data
 rm_outliers <- function (dat, pro_df, ratio, mult = 2){
   
@@ -335,7 +348,7 @@ plot_pro <- function(dat, g_title, FUN = geom_jitter, x_pos = 9, y1_pos = 0.83,
   g <- ggplot(dat, aes(x = week, y = abundance)) +
     FUN(mapping = aes(x = week, y = abundance, fill = leg), 
         alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
-    labs(title = g_title, x = "Week", y = "Raw Abundance", fill = "Leg") +
+    labs(title = g_title, x = "Week", y = "Abundance", fill = "Leg") +
     expand_limits(x = 0, y = 0) +
     theme_classic() +  
     expand_limits(x = 0, y = 0) +
@@ -357,6 +370,78 @@ plot_pro <- function(dat, g_title, FUN = geom_jitter, x_pos = 9, y1_pos = 0.83,
     theme(plot.margin = unit(c(1, 5, 1, 1), "lines"))
   return(g)
 }
+
+## plot_rat function
+
+plot_rat <- function(dat, g_title, FUN = geom_jitter, x_pos = 8.75, y1_pos = 0.83,
+                     y2_pos = 0.30){
+  
+  df_r <- filter(dat, leg == "R")
+  
+  lm_r <- lm(ratio ~ week, df_r)
+  
+  eqn_r <- lm_eqn(lm_r)
+  
+  g <- ggplot(df_r, aes(x = week, y = ratio)) +
+    FUN(mapping = aes(x = week, y = ratio, fill = sex), 
+        alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
+    labs(title = g_title, x = "Week", y = "Abundance ratio\n R to L") +
+    expand_limits(x = 0, y = 0) +
+    theme_classic() +  
+    expand_limits(x = 0, y = 0) +
+    geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
+                size = 1.1, show.legend = FALSE, linetype = "dotted") +
+    annotate("text", x = x_pos, y = (y1_pos)*(max(df_r$ratio)), 
+             label = eqn_r[1], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = x_pos, y = (y1_pos - 0.05)*(max(df_r$ratio)), 
+             label = eqn_r[2], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = x_pos, y = (y1_pos - 0.11)*(max(df_r$ratio)), 
+             label = eqn_r[3], parse = TRUE, color = "#F98B86") +
+    coord_cartesian(xlim = c(1, 8), clip = 'off') +
+    theme(plot.margin = unit(c(1, 5, 1, 1), "lines"))
+  return(g)
+}
+
+
+# Linear fit for summed isotope ratio over time
+plot_sum_ratio <- function(dat, g_title, g_subtitle, FUN = geom_jitter, x_pos = 3.2, y1_pos = 0.83,
+                     y2_pos = 0.30){
+  
+  df_l <- filter(dat, leg == "L")
+  df_r <- filter(dat, leg == "R")
+  
+  lm_l <- lm(ratio ~ week, df_l)
+  lm_r <- lm(ratio ~ week, df_r)
+  
+  eqn_l <- lm_eqn(lm_l)
+  eqn_r <- lm_eqn(lm_r)
+  
+  g <- ggplot(dat, aes(x = week, y = ratio)) +
+    FUN(mapping = aes(x = week, y = ratio, fill = leg), 
+        alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
+    labs(title = g_title, subtitle = g_subtitle, x = "Week", y = "ratio", fill = "Leg") +
+    expand_limits(x = 0, y = 0) +
+    theme_classic() +  
+    expand_limits(x = 0, y = 0) +
+    geom_smooth(mapping = aes(color = leg), method = 'lm', se = FALSE, 
+                size = 1.1, show.legend = FALSE, linetype = "dotted") +
+    annotate("text", x = x_pos, y = (y1_pos)*(max(dat$ratio)), 
+             label = eqn_l[1], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = x_pos, y = (y1_pos - 0.05)*(max(dat$ratio)), 
+             label = eqn_l[2], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = x_pos, y = (y1_pos - 0.11)*(max(dat$ratio)), 
+             label = eqn_l[3], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = x_pos, y = (y2_pos)*(max(dat$ratio)), 
+             label = eqn_r[1], parse = TRUE, color = "#53D3D7") +
+    annotate("text", x = x_pos, y = (y2_pos - 0.05)*(max(dat$ratio)), 
+             label = eqn_r[2], parse = TRUE, color = "#53D3D7") +
+    annotate("text", x = x_pos, y = (y2_pos - 0.11)*(max(dat$ratio)), 
+             label = eqn_r[3], parse = TRUE, color = "#53D3D7") +
+    coord_cartesian(xlim = c(0, 3), clip = 'off') +
+    theme(plot.margin = unit(c(1, 5, 1, 1), "lines"))
+  return(g)
+}
+
 
 # convert an individual accession to gene for each graph 
 indiv_mpa_to_gene <- function (Acc_pro, gene_dat){
@@ -620,6 +705,10 @@ mega_model <- function (peptide, deg_old, deg_new, syn, t0_abun, per_lab, time){
 plot_iso_r <- function(dat, g_title, g_subtitle, FUN = geom_jitter, 
                        x_pos = 3.35, y_pos1 = 0.83, y_pos2 = 0.30){
   
+  if((max(dat$ratio)+0.05)<(max(dat$ratio)-min(dat$ratio))) {
+    y_pos2 = 0.25
+  }
+  
   df <- dat %>%
     group_by(leg) %>%
     do(fit = nls(ratio ~ SSasymp(week, yf, y0, log_k), data = .)) %>%
@@ -657,7 +746,51 @@ plot_iso_r <- function(dat, g_title, g_subtitle, FUN = geom_jitter,
   
 }
 
-# corrected m0/(m0+m1)
+# Plot fractional M+0 over time
+
+plot_m0 <- function(dat, g_title, g_subtitle, FUN = geom_jitter, 
+                       x_pos = 3.35, y_pos1 = 0.83, y_pos2 = 0.30){
+  
+  df <- dat %>%
+    group_by(leg) %>%
+    do(fit = nls(M_0_norm ~ SSasymp(week, yf, y0, log_k), data = .)) %>%
+    tidy(fit) %>%
+    select(leg, term, estimate) %>%
+    spread(term, estimate) %>%
+    mutate(k = exp(log_k))
+  
+  L_k_yf <- k_yf(df, "L")
+  R_k_yf <- k_yf(df, "R")
+  
+  g <- ggplot(dat, aes(x = week, y = M_0_norm)) +
+    FUN(mapping = aes(x = week, y = M_0_norm, fill = leg), 
+        alpha = 0.5, size = 3, pch = 21,  color = "black", width = 0.05) +
+    geom_smooth(method = "nls", formula = y ~ SSasymp(x, yf, y0, log_k),
+                data = dat,
+                se = FALSE,
+                aes(color = leg), show.legend = FALSE) +
+    annotate("text", x = x_pos, y = (y_pos1)*(max(dat$M_0_norm)), 
+             label = L_k_yf[1], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = x_pos, y = (y_pos1 - 0.07)*(max(dat$M_0_norm)), 
+             label = L_k_yf[2], parse = TRUE, color = "#F98B86") +
+    annotate("text", x = x_pos, y = (y_pos2)*(max(dat$M_0_norm)), 
+             label = R_k_yf[1], parse = TRUE, color = "#53D3D7") +
+    annotate("text", x = x_pos, y = (y_pos2 - 0.07)*(max(dat$M_0_norm)), 
+             label = R_k_yf[2], parse = TRUE, color = "#53D3D7") +
+    labs(title = g_title, subtitle = g_subtitle, 
+         x = "Week", y = "M0/Mi Ratio", # change later!
+         fill = "Leg") +
+    expand_limits(x = 0, y = 0) +
+    theme_classic() +    
+    coord_cartesian(xlim = c(0, 3), clip = 'off') +
+    theme(plot.margin = unit(c(1, 2.25, 1, 1), "lines"))
+  return(g)
+  
+}
+
+
+
+# corrected m1+2+3/(m0+m1+2+3)
 iso_ratio_calc <- function(dat){
   
   ratios <- NULL
@@ -680,6 +813,87 @@ iso_ratio_calc <- function(dat){
   
   return(ratios)
   
+}
+
+
+# Iso_ratio_calc accounting for only M+1 peak
+
+iso_ratio_calc_one <- function(dat){
+  
+  ratios <- NULL
+  
+  for (i in 1:nrow(dat)){
+    
+    t0_ratio <- mean(dat$t0_r[which(dat$protein == dat$protein[i] & 
+                                      dat$peptide == dat$peptide[i] &
+                                      dat$sex == dat$sex[i] & 
+                                      dat$leg == dat$leg[i] & 
+                                      dat$week == 0)], na.rm = TRUE)
+    
+    temp <- (dat$M_1[i] - (t0_ratio * dat$M_0[i])) / 
+      (dat$M_0[i] + (dat$M_1[i] - 
+                       (t0_ratio * dat$M_0[i])))
+    
+    ratios <- c(ratios, temp)
+    
+  }
+  
+  return(ratios)
+  
+}
+
+# # Ratio of each peptide's all-isotope summed abundance to that of
+# # a selected peptide
+# 
+# iso_sum_ratio <- function(dat, divisor) {
+#   
+#   ratios <- NULL
+#   
+#   for (i in 1:nrow(dat)){
+#     divisorsum <- mean(dat$Sum[which(dat$protein == divisor &
+#                                 dat$sex == dat$sex[i] & 
+#                                 dat$leg == dat$leg[i] & 
+#                                 dat$week == dat$week[i])])
+#     ratios <- c(ratios, dat$Sum[i]/divisorsum)
+#   }
+#   return(ratios)
+# }
+
+# Average per-protein Right-leg abundance divided by left-leg abundance outputted
+# as new column
+
+protein_leg_ratio <- function(dat) {
+
+  ratios <- NULL
+
+  for (i in 1:nrow(dat)){
+    denom <- mean(dat$abundance[which(dat$Master.Protein.Accessions == dat$Master.Protein.Accessions[i] &
+                                dat$sex == dat$sex[i] &
+                                dat$leg != dat$leg[i] &
+                                dat$week == dat$week[i])])
+    ratios <- c(ratios, dat$abundance[i]/denom)
+  }
+  return(ratios)
+}
+
+# leg-ratio with non-averaged denominator (need 'individual' column)
+
+protein_leg_ratio_ind <- function(dat) {
+  
+  ratios <- NULL
+  
+  for (i in 1:nrow(dat)){
+    denom <- dat$abundance[which(dat$Master.Protein.Accessions == dat$Master.Protein.Accessions[i] &
+                                        dat$sex == dat$sex[i] &
+                                        dat$individual == dat$individual[i] &
+                                        dat$leg != dat$leg[i] &
+                                        dat$week == dat$week[i])]
+    if (length(denom) < 1){
+      denom <- NA
+    }
+    ratios <- c(ratios, dat$abundance[i]/denom)
+  }
+  return(ratios)
 }
 
 # get the k and yf value into an equation to be put on graph 
