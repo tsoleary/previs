@@ -6,8 +6,12 @@ source("C:/Users/PrevBeast/Documents/GitHub/Previs/proteomics_functions.R")
 setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 
 # read in the data.frame with the top 3 avg for each protein & each sample
-protein <- read.csv("kowalski_M_week_1_8_top_3_abund_norm_sum_total_r.csv")
-protein$X <- NULL 
+# protein <- read.csv("kowalski_M_week_1_8_top_3_abund_norm_sum_total_r.csv")
+protein <- inner_join(read.csv("kowalski_F_w1_w8_norm_sum_total_top_3_r.csv"),
+                      read.csv("kowalski_M_week_1_8_top_3_abund_norm_sum_total_r.csv"),
+                      by = "Master.Protein.Accessions")
+protein$X.x <- NULL 
+colnames(protein) <- gsub(".y", "", colnames(protein))
 
 # colnames should only have File_Leg_Sex_Week
 colnames(protein) <- gsub("_norm", "", colnames(protein))
@@ -22,7 +26,19 @@ df_tidy <- protein %>%
 
 df_tidy$week <- as.numeric(df_tidy$week)
 
+# New column for mouse number
+
+mouse_dat <- read.csv("Mouse file list.csv")
+mouse_dat$file <- as.character(mouse_dat$file) %>%
+  str_pad(., 4, "right", pad = "-")
+
+df_tidy$file <- as.character(df_tidy$file) %>%
+  str_pad(., 4, "right", pad = "-")
+
+df_tidy$individual <- file_to_ind(df_tidy, mouse_dat)
+
 # median together the duplicates in the same week
+
 df <- df_tidy %>%
   group_by(Master.Protein.Accessions, sex, leg, week) %>%
   summarize(abundance = median(abundance, na.rm = TRUE))
@@ -31,28 +47,33 @@ df <- df_tidy %>%
 df <- df[!is.na(df$abundance), ]
 
 df <- df %>%
-  group_by(Master.Protein.Accessions, sex, leg) %>%
+  group_by(Master.Protein.Accessions, leg) %>%
   do(filter(., length(unique(week)) > 1)) 
 
 df <- df %>%
   group_by(Master.Protein.Accessions, sex) %>%
   do(filter(., length(unique(leg)) > 1))
 
+## Per-protein average right-leg to left-leg ratio of abundance-----------------
+
+# df$ratio <- protein_leg_ratio(df)
+df$ratio <- protein_leg_ratio_ind(df)
+
 # spread out df to make an excel file of the numbers with the data that we graph
 
-df_L_R <- df %>%
-  spread(., "leg", "abundance")
-
-library(data.table)
-
-df_csv <- dcast(setDT(df_L_R), Master.Protein.Accessions ~ week, 
-                 value.var = c("L", "R")) 
-
-gene_df <- read.csv("Kowalski_M_week_1_8_gene_names.csv")
-
-df_csv$gene <- mpa_to_gene(df_csv, gene_df)
-
-write.csv(df_csv, "kowalski_M_w1_w8_med_protein_time_r.csv")
+# df_L_R <- df %>%
+#   spread(., "leg", "abundance")
+# 
+# library(data.table)
+# 
+# df_csv <- dcast(setDT(df_L_R), Master.Protein.Accessions ~ week, 
+#                  value.var = c("L", "R")) 
+# 
+# gene_df <- read.csv("Kowalski_M_week_1_8_gene_names.csv")
+# 
+# df_csv$gene <- mpa_to_gene(df_csv, gene_df)
+# 
+# write.csv(df_csv, "kowalski_M_w1_w8_med_protein_time_r.csv")
 
 # for linear fit data frame ----------------------------------------------------
 # # need to first make a plot of the whole thing
@@ -69,12 +90,13 @@ write.csv(df_csv, "kowalski_M_w1_w8_med_protein_time_r.csv")
 
 # plotting check on one protein ------------------------------------------------
 # filter for learning
-df_g <- filter(df, Master.Protein.Accessions == "A0A068BFR3")
+df_g <- filter(df, Master.Protein.Accessions == "A0A075DC90")
 
 # for test the plots and learning :)
 plot_pro(df_g, "PLOTTING IS FUN")
+plot_rat(df_g, "PLOTTING IS FUN")
 
-# plot all proteins ------------------------------------------------------------
+# plot all proteins OR R/L ratio ------------------------------------------------
 pros <- as.character(unique(df$Master.Protein.Accessions))
 
 plot_list <- list()
@@ -82,11 +104,12 @@ plot_list <- list()
 for (pro in pros){
   gene <- indiv_mpa_to_gene(pro, protein)
   temp_df <- filter(df, Master.Protein.Accessions == pro)
-  g <- plot_pro(temp_df, g_title = gene)
+  # g <- plot_pro(temp_df, g_title = gene)
+  g <- plot_rat(temp_df, g_title = gene)
   plot_list[[pro]] <- g
 }
 
-pdf("plot_F_w1_w8_top_1_abund_norm_sum_total_med.pdf", width = 10.75, height = 6)
+pdf("Pool Week 1-8 Protein Abundance Ratios Individual per Individual.pdf", width = 10.75, height = 6)
 
 for(pro in pros){
   print(plot_list[[pro]])
