@@ -64,23 +64,23 @@ data <-
 # data <- as_tibble(data)
 # data <- cbind(data, norm_test)
 
-# TA muscle mass (mg) and sum-total (one operation)
-
-sample_id_mass <- read.csv("PSD proteomic sample info M w1_8.csv")
-ta_mass <- sample_id_mass$TA.mass
-names(ta_mass) <- sample_id_mass$ID
-
-
-norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
-
-raw_abun_mat <- as.matrix(data[, ctrl_raw])
-
-
-norm_abun <- t(t(raw_abun_mat)*ta_mass/norm_value)
-colnames(norm_abun) <- paste(colnames(norm_abun), sep = "_", "norm")
-norm_test <- as.data.frame(norm_abun)
-data <- as_tibble(data)
-data <- cbind(data, norm_test)
+# # TA muscle mass (mg) and sum-total (one operation)
+# 
+# sample_id_mass <- read.csv("PSD proteomic sample info M w1_8.csv")
+# ta_mass <- sample_id_mass$TA.mass
+# names(ta_mass) <- sample_id_mass$ID
+# 
+# 
+# norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
+# 
+# raw_abun_mat <- as.matrix(data[, ctrl_raw])
+# 
+# 
+# norm_abun <- t(t(raw_abun_mat)*ta_mass/norm_value)
+# colnames(norm_abun) <- paste(colnames(norm_abun), sep = "_", "norm")
+# norm_test <- as.data.frame(norm_abun)
+# data <- as_tibble(data)
+# data <- cbind(data, norm_test)
 
 # Data frame with only top few ionizing peptides -------------------------------
 
