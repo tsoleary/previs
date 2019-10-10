@@ -54,6 +54,11 @@ df <- df %>%
   group_by(Master.Protein.Accessions, sex) %>%
   do(filter(., length(unique(leg)) > 1))
 
+# Sort by Mouse identifier
+
+df$individual <- as.numeric(df$individual)
+df <- arrange(df, individual)
+
 ## Per-protein average right-leg to left-leg ratio of abundance-----------------
 
 # df$ratio <- protein_leg_ratio(df)
