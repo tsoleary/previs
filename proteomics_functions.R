@@ -876,6 +876,46 @@ protein_leg_ratio <- function(dat) {
   return(ratios)
 }
 
+# Paired T-test for each protein, by week, between left-leg and right-leg abundance
+
+t.test(x = df2$abundance[which(df2$Master.Protein.Accessions == "Q9R0Y5" &
+                                 df2$leg == "R" &
+                                 df2$week == 2)], 
+       y = df2$abundance[which(df2$Master.Protein.Accessions == "Q9R0Y5" &
+                                 df2$leg == "L" &
+                                 df2$week == 2)],
+       alternative = "two.sided", paired = TRUE)$p.value
+
+paired_leg_ttest <- function(dat) {
+  name <- NULL
+  p_value <- NULL
+  week <- NULL
+  for (i in unique(dat$week)) {
+    
+    for (prot in unique(dat$Master.Protein.Accessions)) {
+     pval_temp <- t.test(x = dat$abundance[which(dat$Master.Protein.Accessions == prot &
+                                        dat$leg == "R" &
+                                        dat$week == i)], 
+            y = dat$abundance[which(dat$Master.Protein.Accessions == prot &
+                                      dat$leg == "L" &
+                                      dat$week == i)],
+            alternative = "two.sided", paired = TRUE)$p.value
+     name <- c(name, prot)
+     p_value <- c(p_value, pval_temp)
+     
+    }
+    week_temp <- rep.int(i, (length(p_value) - length(week)))
+    week <- c(week, week_temp)
+  }
+  
+  return(as.data.frame(cbind(name, p_value)))
+  
+}
+
+paired_leg_ttest(df)
+
+test <- paired_leg_ttest(df)
+
 # leg-ratio with non-averaged denominator (need 'individual' column)
 
 protein_leg_ratio_ind <- function(dat) {
