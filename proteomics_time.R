@@ -46,18 +46,27 @@ df <- df_tidy %>%
 # remove the NA's & proteins that have data in only one week or one leg
 df <- df[!is.na(df$abundance), ]
 
+# df <- df %>%
+#   group_by(Master.Protein.Accessions, leg) %>%
+#   do(filter(., length(unique(week)) > 1)) 
+# 
+# df <- df %>%
+#   group_by(Master.Protein.Accessions, sex) %>%
+#   do(filter(., length(unique(leg)) > 1))
+
 df <- df %>%
   group_by(Master.Protein.Accessions, leg) %>%
   do(filter(., length(unique(week)) > 1)) 
 
 df <- df %>%
-  group_by(Master.Protein.Accessions, sex) %>%
+  group_by(Master.Protein.Accessions, individual) %>%
   do(filter(., length(unique(leg)) > 1))
 
 # Sort by Mouse identifier
 
 df$individual <- as.numeric(df$individual)
 df <- arrange(df, individual)
+
 
 ## Per-protein average right-leg to left-leg ratio of abundance-----------------
 
