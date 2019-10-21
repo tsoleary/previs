@@ -67,6 +67,23 @@ df <- df %>%
 df$individual <- as.numeric(df$individual)
 df <- arrange(df, individual)
 
+## Stats! ----------------------------------------------------------------------
+
+# Paired ttest per-protein, per-week, comparing legs
+
+pval_df <- paired_leg_ttest(df)
+gene_df <- read.csv('Kowalski_F_w1_w8_gene_names.csv')
+pval_df$gene <- mpa_to_gene(pval_df, gene_df)
+
+# Two-way, repeated-measures ANOVA of protein abundance values by individual
+# and leg
+
+prot_aov <- with(df,
+                   aov(abundance ~ leg * week +
+                         Error(Master.Protein.Accessions / (leg * week)))
+)
+
+summary(prot_aov)
 
 ## Per-protein average right-leg to left-leg ratio of abundance-----------------
 
