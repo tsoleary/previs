@@ -40,7 +40,7 @@ df_tidy$individual <- file_to_ind(df_tidy, mouse_dat)
 # median together the duplicates in the same week
 
 df <- df_tidy %>%
-  group_by(Master.Protein.Accessions, sex, leg, week) %>%
+  group_by(Master.Protein.Accessions, leg, week) %>%
   summarize(abundance = median(abundance, na.rm = TRUE))
 
 # remove the NA's & proteins that have data in only one week or one leg
@@ -48,7 +48,7 @@ df <- df[!is.na(df$abundance), ]
 
 # df <- df %>%
 #   group_by(Master.Protein.Accessions, leg) %>%
-#   do(filter(., length(unique(week)) > 1)) 
+#   do(filter(., length(unique(week)) > 1))
 # 
 # df <- df %>%
 #   group_by(Master.Protein.Accessions, sex) %>%
@@ -56,7 +56,7 @@ df <- df[!is.na(df$abundance), ]
 
 df <- df %>%
   group_by(Master.Protein.Accessions, leg) %>%
-  do(filter(., length(unique(week)) > 1)) 
+  do(filter(., length(unique(week)) > 1))
 
 df <- df %>%
   group_by(Master.Protein.Accessions, individual) %>%
@@ -74,16 +74,24 @@ df <- arrange(df, individual)
 pval_df <- paired_leg_ttest(df)
 gene_df <- read.csv('Kowalski_F_w1_w8_gene_names.csv')
 pval_df$gene <- mpa_to_gene(pval_df, gene_df)
+write.csv(pval_df, "Kowalski Paired Ttest Pvalues.csv", row.names = FALSE)
 
-# Two-way, repeated-measures ANOVA of protein abundance values by individual
-# and leg
-
-prot_aov <- with(df,
-                   aov(abundance ~ leg * week +
-                         Error(Master.Protein.Accessions / (leg * week)))
-)
-
-summary(prot_aov)
+# # Two-way, repeated-measures ANOVA of protein abundance values by individual------
+# # and leg
+# 
+# # prot_aov <- with(df[which(df$Master.Protein.Accessions == "A0A075DC90"), ],
+# #                    aov(abundance ~ leg * week +
+# #                          Error(individual / (leg * week)))
+# # )
+# # 
+# # summary(prot_aov)
+# 
+# # week_as_ind <- with(df[which(df$Master.Protein.Accessions == "A0A075DC90"), ],
+# #                  aov(abundance ~ leg * individual +
+# #                        Error(week / (leg * individual)))
+# # )
+# # 
+# # summary(week_as_ind)
 
 ## Per-protein average right-leg to left-leg ratio of abundance-----------------
 
