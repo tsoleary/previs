@@ -46,7 +46,9 @@ df_tidy$file <- as.character(df_tidy$file) %>%
 
 df_tidy$individual <- file_to_ind(df_tidy, mouse_dat)
 
-# median together the duplicates in the same week
+# median together the duplicates in the same week (STILL RUN FIRST TWO LINES
+# EVEN IF MEDIAN IS DESIRED - following code requires data be
+# object named 'df')
 
 df <- df_tidy %>%
   group_by(Master.Protein.Accessions, leg, week) %>%
@@ -54,20 +56,19 @@ df <- df_tidy %>%
 
 # remove the NA's & proteins that have data in only one week or one leg
 df <- df[!is.na(df$abundance), ]
-# df2 <- df[!is.na(df$Master.Protein.Accessions), ]
-
-# df <- df %>%
-#   group_by(Master.Protein.Accessions, leg) %>%
-#   do(filter(., length(unique(week)) > 1))
-# 
-# df <- df %>%
-#   group_by(Master.Protein.Accessions, sex) %>%
-#   do(filter(., length(unique(leg)) > 1))
+df <- df[df$Master.Protein.Accessions != "", ]
 
 df <- df %>%
-  group_by(Master.Protein.Accessions, leg) %>%
-  do(filter(., length(unique(week)) > 1))
+group_by(Master.Protein.Accessions, leg) %>%
+do(filter(.,length(unique(week)) > 1))
 
+# If not grouping by individual mouse number
+# df <- df %>%
+# group_by(Master.Protein.Accessions, sex) %>%
+# do(filter(.,length(unique(leg)) > 1))
+
+# If data from both legs is desired per-protein in each individual mouse 
+# (Removes if data from both legs not found)
 df <- df %>%
   group_by(Master.Protein.Accessions, individual) %>%
   do(filter(., length(unique(leg)) > 1))
