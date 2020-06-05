@@ -7,11 +7,20 @@ setwd("C:/Users/PrevBeast/Documents/R/Kowalski")
 
 # read in the data.frame with the top 3 avg for each protein & each sample
 # protein <- read.csv("kowalski_M_week_1_8_top_3_abund_norm_sum_total_r.csv")
-protein <- inner_join(read.csv("kowalski_F_w1_w8_norm_sum_total_top_3_r.csv"),
+# protein <- inner_join(read.csv("kowalski_F_w1_w8_norm_sum_total_top_3_r.csv"),
+#                       read.csv("kowalski_M_week_1_8_top_3_abund_norm_sum_total_r.csv"),
+#                       by = c("Master.Protein.Accessions", "gene"))
+
+protein <- full_join(read.csv("kowalski_F_w1_w8_norm_sum_total_top_3_r.csv"),
                       read.csv("kowalski_M_week_1_8_top_3_abund_norm_sum_total_r.csv"),
                       by = "Master.Protein.Accessions")
+
 protein$X.x <- NULL 
-colnames(protein) <- gsub(".y", "", colnames(protein))
+protein$X.y <- NULL 
+protein <- rename(protein, "peptides_fem" = "peptides.x", "peptides_male" = "peptides.y")
+protein$gene.y <- NULL
+
+colnames(protein) <- gsub(".x", "", colnames(protein))
 
 # colnames should only have File_Leg_Sex_Week
 colnames(protein) <- gsub("_norm", "", colnames(protein))
@@ -45,6 +54,7 @@ df <- df_tidy %>%
 
 # remove the NA's & proteins that have data in only one week or one leg
 df <- df[!is.na(df$abundance), ]
+# df2 <- df[!is.na(df$Master.Protein.Accessions), ]
 
 # df <- df %>%
 #   group_by(Master.Protein.Accessions, leg) %>%
@@ -66,6 +76,11 @@ df <- df %>%
 
 df$individual <- as.numeric(df$individual)
 df <- arrange(df, individual)
+
+# Export merged 'raw'
+
+write.csv(df, file = "Protein values norm sum total from top 3 pruned.csv", row.names = FALSE)
+
 
 ## Stats! ----------------------------------------------------------------------
 
