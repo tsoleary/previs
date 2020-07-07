@@ -4,7 +4,7 @@ setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs")
 ## Import clipboard of Exact Masses from chosen scan(s) in CSV format
 ## (Code below omits header and sets appropriate colnames/)
 
-mass_list <- read.csv("ALQEAH 5 LV.csv") %>%
+mass_list <- read.csv("ALQEAH 1 LV.csv") %>%
     .[8:nrow(.), ]
 colnames(mass_list) <- c("m/z", "Intensity")
 
@@ -31,26 +31,39 @@ rownames(maxima) <- 1:nrow(maxima)
 ## Find series - Before using, manually pick a m/z value from 'maxima' to be
 ## first ion in series. MAY NOT BE INDEX OF 1!! Depends highly on subset!
 ## May modify for cases in which selected starting-m/z is not M+0.
-m0 <- 936.8176
-envelope <- maxima[1,]
+# m0 <- 936.8044
+# m0ind <- which.min(abs(maxima$`m/z` - m0))
+# m0 <- maxima$`m/z`[m0ind]
+# envelope <- maxima[m0ind,]
+# NAcount <- 0
+# 
+# for (i in 1:21) {
+#   if (i == 1) {
+#   tar <- m0 + 0.33 } else {
+#   tar <- tar + 0.33
+#   }
+#   maxima$iondiff <- maxima$`m/z` - tar
+#   mindiff <- which.min(abs(maxima$iondiff))
+#   if (abs(maxima$iondiff[mindiff]) < 0.02) {
+#   envelope <- full_join(envelope, maxima[mindiff, ])
+#   tar <- maxima$'m/z'[mindiff] } else {
+#   NAcount <- NAcount + 1
+#   if (NAcount > 1) {
+#     break
+#   }
+#   blank <- c(NA, NA, NA, NA, NA)
+#   names(blank) <- names(envelope)
+#   envelope <- bind_rows(envelope, blank)
+#   
+#   next
+#   }
+# }
+# 
+# rm(tar)
 
-for (i in 1:21) {
-  if (i == 1) {
-  tar <- m0 + 0.33 } else {
-  tar <- tar + 0.33
-  }
-  maxima$iondiff <- maxima$`m/z` - tar
-  mindiff <- which.min(abs(maxima$iondiff))
-  if (abs(maxima$iondiff[mindiff]) < 0.025) {
-  envelope <- full_join(envelope, maxima[mindiff, ])
-  tar <- maxima$'m/z'[mindiff] } else {
-  next
-  }
-}
+find_envelopes(maxima, 936.8044, 3, rep = "LV 1")
 
-rm(tar)
-
-write.csv(envelope, "test series ALQEAH LV 5.csv", row.names = FALSE)
+write.csv(envelope, "test series ALQEAH LV 1.csv", row.names = FALSE)
 
 
 ## To do: Functionalize script. Inputs should be M0 mass, charge at the very least.
@@ -59,4 +72,77 @@ write.csv(envelope, "test series ALQEAH LV 5.csv", row.names = FALSE)
 ## M+X peak.
 
 #############################################
+
+# find_envelope <- function(data, mass, charge, deltamax = 0.02) {
+# m0ind <- which.min(abs(data$`m/z` - mass))
+# m0 <- data$`m/z`[m0ind]
+# envelope <- data[m0ind,]
+# zreciprocal <- 1/charge
+# NAcount <- 0
+# 
+# for (i in 1:21) {
+#   if (i == 1) {
+#     tar <- m0 + zreciprocal } else {
+#       tar <- tar + zreciprocal
+#     }
+#   data$iondiff <- data$`m/z` - tar
+#   mindiff <- which.min(abs(data$iondiff))
+#   if (abs(data$iondiff[mindiff]) < deltamax) {
+#     envelope <- full_join(envelope, data[mindiff, ])
+#     tar <- data$'m/z'[mindiff] } else {
+#       NAcount <- NAcount + 1
+#       if (NAcount > 1) {
+#         break
+#       }
+#       blank <- c(NA, NA, NA, NA, NA)
+#       names(blank) <- names(envelope)
+#       envelope <- bind_rows(envelope, blank)
+#       
+#       next
+#     }
+# }
+# return(envelope)
+# }
+# rm(tar)
+
+
+find_envelopes <- function(data, mass, charge, rep, deltamax = 0.02) {
+  m0ind <- which.min(abs(data$`m/z` - mass))
+  m0 <- data$`m/z`[m0ind]
+  envelope <- data[m0ind,]
+  zreciprocal <- 1/charge
+  NAcount <- 0
+  Isos <- "M+0"
+  
+  for (i in 1:21) {
+    if (i == 1) {
+      tar <- m0 + zreciprocal } else {
+        tar <- tar + zreciprocal
+        tempiso <- paste0("M+", i-1)
+        Isos <- c(Isos, tempiso)
+      }
+    data$iondiff <- data$`m/z` - tar
+    mindiff <- which.min(abs(data$iondiff))
+    if (abs(data$iondiff[mindiff]) < deltamax) {
+      envelope <- full_join(envelope, data[mindiff, ])
+      tar <- data$'m/z'[mindiff] } else {
+        NAcount <- NAcount + 1
+        if (NAcount > 1) {
+          break
+        }
+        blank <- c(NA, NA, NA, NA, NA)
+        names(blank) <- names(envelope)
+        envelope <- bind_rows(envelope, blank)
+        
+        next
+      }
+  }
+  sample <- paste(rep)
+  envelope$Isotopomer <- Isos
+  envelope <- select(envelope, Isotopomer, Intensity)
+  colnames(envelope) <- c("Isotopomer", rep)
+  return(envelope)
+}
+rm(tar)
+
 
