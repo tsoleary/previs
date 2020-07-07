@@ -1,17 +1,17 @@
 library(tidyverse)
-setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs\\maxfinder test")
+setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs\\GTLEDQ")
 
 ## Import clipboard of Exact Masses from chosen scan(s) in CSV format
 ## (Code below omits header and sets appropriate colnames/)
 
 # pepcsv_list <- list.files()[grep("ALQEAH", list.files())]
 
-for (i in c(1:20, 22)) {
-maxima <- find_maxima("ALQEAH", "LV", i)
+for (i in c(1:22)) {
+maxima <- find_maxima("GTLEDQ", "LV", i)
 
 sample <- paste("LV", i)
 
-envelope <- find_envelopes(maxima, 936.8044, 3, rep = sample)
+envelope <- find_envelopes(maxima, 1100.56, 2, rep = sample)
 
 if (i == 1) {
   envelopes <- envelope
@@ -55,7 +55,7 @@ if (i == 1) {
 
 
 
-write.csv(envelope, "test series ALQEAH LV 1.csv", row.names = FALSE)
+write.csv(envelopes, "GTLEDQ all LV auto.csv", row.names = FALSE)
 
 
 ## To do: Functionalize script. Inputs should be M0 mass, charge at the very least.
@@ -116,8 +116,8 @@ find_maxima <- function(peptide, tissue, rep) {
   ##  need to be a column. Might change later.
   mass_list$diffdiffsign <- c(0, diff(sign(diff(mass_list$Intensity))), 0)
   ## Subset
-  maxima <- mass_list[mass_list$diffdiffsign == -2, 1:ncol(mass_list)] %>%
-    .[.$`m/z` > 936.76 & .$`m/z` < (936.76 + (1/3 * 21)), ]
+  maxima <- mass_list[mass_list$diffdiffsign == -2, 1:ncol(mass_list)] # %>%
+    # .[.$`m/z` > 936.76 & .$`m/z` < (936.76 + (1/3 * 21)), ]
   ## Sets indices to '1:nrow(maxima)' to avoid base-R bug where subsets of a DF
   ## with indices higher than the number of rows introduces NAs.
   ## (Apparently could have avoided by using dplyr::filter - learning experience.)
