@@ -1,32 +1,24 @@
 library(tidyverse)
-setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs")
+setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs\\maxfinder test")
 
 ## Import clipboard of Exact Masses from chosen scan(s) in CSV format
 ## (Code below omits header and sets appropriate colnames/)
 
-mass_list <- read.csv("ALQEAH 1 LV.csv") %>%
-    .[8:nrow(.), ]
-colnames(mass_list) <- c("m/z", "Intensity")
+# pepcsv_list <- list.files()[grep("ALQEAH", list.files())]
 
-## Decoy list to verify operations working as intended
-# mass_list2 <- mass_list
+for (i in c(1:20, 22)) {
+maxima <- find_maxima("ALQEAH", "LV", i)
 
-## Coerces factor-class columns to numeric (character first because of factor-
-## to-numeric weirdness.)
-mass_list$`m/z` <- as.numeric(as.character(mass_list$`m/z`))
-mass_list$Intensity <- as.numeric(as.character(mass_list$Intensity))
-##  Diffdiffsign operation is key for finding maxima here. Theoretically does not
-##  need to be a column. Might change later.
-mass_list$diffsign <- c(sign(diff(mass_list$Intensity)), 0)
-mass_list$diffdiffsign <- c(0, diff(sign(diff(mass_list$Intensity))), 0)
-## Subset
-maxima <- mass_list[mass_list$diffdiffsign == -2, 1:ncol(mass_list)] %>%
-  .[.$`m/z` > 936.76 & .$`m/z` < (936.76 + (1/3 * 21)), ]
-## Sets indices to '1:nrow(maxima)' to avoid base-R bug where subsets of a DF
-## with indices higher than the number of rows introduces NAs.
-## (Apparently could have avoided by using dplyr::filter - learning experience.)
-rownames(maxima) <- 1:nrow(maxima)
-  
+sample <- paste("LV", i)
+
+envelope <- find_envelopes(maxima, 936.8044, 3, rep = sample)
+
+if (i == 1) {
+  envelopes <- envelope
+} else {
+  envelopes <- full_join(envelope, envelopes, by = "Isotopomer")
+}
+}
 
 ## Find series - Before using, manually pick a m/z value from 'maxima' to be
 ## first ion in series. MAY NOT BE INDEX OF 1!! Depends highly on subset!
@@ -61,7 +53,7 @@ rownames(maxima) <- 1:nrow(maxima)
 # 
 # rm(tar)
 
-find_envelopes(maxima, 936.8044, 3, rep = "LV 1")
+
 
 write.csv(envelope, "test series ALQEAH LV 1.csv", row.names = FALSE)
 
@@ -105,6 +97,33 @@ write.csv(envelope, "test series ALQEAH LV 1.csv", row.names = FALSE)
 # }
 # rm(tar)
 
+find_maxima <- function(peptide, tissue, rep) {
+  
+  file <- paste0(peptide, " ", rep, " ", tissue, ".csv")  
+  
+  mass_list <- read.csv(file) %>%
+    .[8:nrow(.), ]
+  colnames(mass_list) <- c("m/z", "Intensity")
+  
+  ## Decoy list to verify operations working as intended
+  # mass_list2 <- mass_list
+  
+  ## Coerces factor-class columns to numeric (character first because of factor-
+  ## to-numeric weirdness.)
+  mass_list$`m/z` <- as.numeric(as.character(mass_list$`m/z`))
+  mass_list$Intensity <- as.numeric(as.character(mass_list$Intensity))
+  ##  Diffdiffsign operation is key for finding maxima here. Theoretically does not
+  ##  need to be a column. Might change later.
+  mass_list$diffdiffsign <- c(0, diff(sign(diff(mass_list$Intensity))), 0)
+  ## Subset
+  maxima <- mass_list[mass_list$diffdiffsign == -2, 1:ncol(mass_list)] %>%
+    .[.$`m/z` > 936.76 & .$`m/z` < (936.76 + (1/3 * 21)), ]
+  ## Sets indices to '1:nrow(maxima)' to avoid base-R bug where subsets of a DF
+  ## with indices higher than the number of rows introduces NAs.
+  ## (Apparently could have avoided by using dplyr::filter - learning experience.)
+  rownames(maxima) <- 1:nrow(maxima)
+  return(maxima)
+}
 
 find_envelopes <- function(data, mass, charge, rep, deltamax = 0.02) {
   m0ind <- which.min(abs(data$`m/z` - mass))
@@ -112,14 +131,14 @@ find_envelopes <- function(data, mass, charge, rep, deltamax = 0.02) {
   envelope <- data[m0ind,]
   zreciprocal <- 1/charge
   NAcount <- 0
-  Isos <- "M+0"
+  # Isos <- "M+0"
   
   for (i in 1:21) {
     if (i == 1) {
       tar <- m0 + zreciprocal } else {
         tar <- tar + zreciprocal
-        tempiso <- paste0("M+", i-1)
-        Isos <- c(Isos, tempiso)
+        # tempiso <- paste0("M+", i-1)
+        # Isos <- c(Isos, tempiso)
       }
     data$iondiff <- data$`m/z` - tar
     mindiff <- which.min(abs(data$iondiff))
@@ -130,15 +149,14 @@ find_envelopes <- function(data, mass, charge, rep, deltamax = 0.02) {
         if (NAcount > 1) {
           break
         }
-        blank <- c(NA, NA, NA, NA, NA)
+        blank <- c(NA, NA, NA, NA)
         names(blank) <- names(envelope)
         envelope <- bind_rows(envelope, blank)
         
         next
       }
   }
-  sample <- paste(rep)
-  envelope$Isotopomer <- Isos
+  envelope$Isotopomer <- paste0("M+", 0:(nrow(envelope) - 1))
   envelope <- select(envelope, Isotopomer, Intensity)
   colnames(envelope) <- c("Isotopomer", rep)
   return(envelope)
