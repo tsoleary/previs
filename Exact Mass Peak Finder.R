@@ -1,24 +1,40 @@
 library(tidyverse)
-setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs\\GTLEDQ")
+setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs\\D3L mouse study\\Ttn Peptides\\LEAPES")
 
+## In case you're on your second or third peptide..
+rm(envelope, envelopes, maxima)
 ## Import clipboard of Exact Masses from chosen scan(s) in CSV format
 ## (Code below omits header and sets appropriate colnames/)
 
 # pepcsv_list <- list.files()[grep("ALQEAH", list.files())]
 
 for (i in c(1:22)) {
-maxima <- find_maxima("GTLEDQ", "LV", i)
-
+maxima <- find_maxima("LEAPES", "LV", i)
 sample <- paste("LV", i)
+maxtemp <- maxima[ , 1:2]
+colnames(maxtemp) <- paste(colnames(maxtemp), sample)
 
-envelope <- find_envelopes(maxima, 1100.56, 2, rep = sample)
+envelope <- find_envelopes(maxima, 431.90, 3, rep = sample)
 
 if (i == 1) {
   envelopes <- envelope
+  compiled_maxima <- maxtemp
 } else {
   envelopes <- full_join(envelope, envelopes, by = "Isotopomer")
+    if (nrow(maxtemp) > nrow(compiled_maxima)) {
+      compiled_maxima[(nrow(compiled_maxima)+1):nrow(maxtemp), ] <- rep(NA,
+      times = (nrow(maxtemp) - nrow(compiled_maxima)))
+    }
+    if (nrow(compiled_maxima) > nrow(maxtemp)) {
+      maxtemp[(nrow(maxtemp)+1):nrow(compiled_maxima), ] <- rep(NA,
+      times = (nrow(compiled_maxima) - nrow(maxtemp)))
+  }
+  compiled_maxima <- bind_cols(maxtemp, compiled_maxima)
 }
 }
+
+write.csv(envelopes, "LEAPES all LV auto.csv", row.names = FALSE)
+write.csv(compiled_maxima, "LEAPES all LV maxima.csv", row.names = FALSE)
 
 ## Find series - Before using, manually pick a m/z value from 'maxima' to be
 ## first ion in series. MAY NOT BE INDEX OF 1!! Depends highly on subset!
@@ -55,7 +71,7 @@ if (i == 1) {
 
 
 
-write.csv(envelopes, "GTLEDQ all LV auto.csv", row.names = FALSE)
+
 
 
 ## To do: Functionalize script. Inputs should be M0 mass, charge at the very least.
@@ -125,7 +141,7 @@ find_maxima <- function(peptide, tissue, rep) {
   return(maxima)
 }
 
-find_envelopes <- function(data, mass, charge, rep, deltamax = 0.02) {
+find_envelopes <- function(data, mass, charge, rep, deltamax = 0.02, NAcounter = TRUE) {
   m0ind <- which.min(abs(data$`m/z` - mass))
   m0 <- data$`m/z`[m0ind]
   envelope <- data[m0ind,]
@@ -145,15 +161,24 @@ find_envelopes <- function(data, mass, charge, rep, deltamax = 0.02) {
     if (abs(data$iondiff[mindiff]) < deltamax) {
       envelope <- full_join(envelope, data[mindiff, ])
       tar <- data$'m/z'[mindiff] } else {
-        NAcount <- NAcount + 1
-        if (NAcount > 1) {
-          break
+          if (NAcounter == TRUE) {
+          NAcount <- NAcount + 1
+          if (NAcount > 1) {
+            if ((i < 4) | (i < 6 & !is.na(envelope[1, 2]))) {
+            NAcount <- 0
+            blank <- rep(NA, times = ncol(envelope))
+            names(blank) <- names(envelope)
+            envelope <- bind_rows(envelope, blank)
+            next
+            }
+            break
+          }
+          blank <- rep(NA, times = ncol(envelope))
+          names(blank) <- names(envelope)
+          envelope <- bind_rows(envelope, blank)
+          
+          next
         }
-        blank <- c(NA, NA, NA, NA)
-        names(blank) <- names(envelope)
-        envelope <- bind_rows(envelope, blank)
-        
-        next
       }
   }
   envelope$Isotopomer <- paste0("M+", 0:(nrow(envelope) - 1))
