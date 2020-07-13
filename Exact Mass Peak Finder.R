@@ -1,5 +1,5 @@
 library(tidyverse)
-setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs\\D3L mouse study\\Ttn Peptides\\LEAPES")
+setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs\\D3L mouse study\\Ttn Peptides\\VLDTPG")
 
 ## In case you're on your second or third peptide..
 rm(envelope, envelopes, maxima)
@@ -9,12 +9,12 @@ rm(envelope, envelopes, maxima)
 # pepcsv_list <- list.files()[grep("ALQEAH", list.files())]
 
 for (i in c(1:22)) {
-maxima <- find_maxima("LEAPES", "LV", i)
+maxima <- find_maxima("VLDTPG", "LV", i)
 sample <- paste("LV", i)
 maxtemp <- maxima[ , 1:2]
 colnames(maxtemp) <- paste(colnames(maxtemp), sample)
 
-envelope <- find_envelopes(maxima, 431.90, 3, rep = sample)
+envelope <- find_envelopes(maxima, 650.373, 3, rep = sample)
 
 if (i == 1) {
   envelopes <- envelope
@@ -33,8 +33,8 @@ if (i == 1) {
 }
 }
 
-write.csv(envelopes, "LEAPES all LV auto.csv", row.names = FALSE)
-write.csv(compiled_maxima, "LEAPES all LV maxima.csv", row.names = FALSE)
+write.csv(envelopes, "VLDTPG all LV auto.csv", row.names = FALSE)
+write.csv(compiled_maxima, "VLDTPG all LV maxima.csv", row.names = FALSE)
 
 ## Find series - Before using, manually pick a m/z value from 'maxima' to be
 ## first ion in series. MAY NOT BE INDEX OF 1!! Depends highly on subset!
@@ -164,7 +164,7 @@ find_envelopes <- function(data, mass, charge, rep, deltamax = 0.02, NAcounter =
           if (NAcounter == TRUE) {
           NAcount <- NAcount + 1
           if (NAcount > 1) {
-            if ((i < 4) | (i < 6 & !is.na(envelope[1, 2]))) {
+            if ((i < 4) | (i < 7 & any(!is.na(envelope[, 2])))) {
             NAcount <- 0
             blank <- rep(NA, times = ncol(envelope))
             names(blank) <- names(envelope)
@@ -187,5 +187,4 @@ find_envelopes <- function(data, mass, charge, rep, deltamax = 0.02, NAcounter =
   return(envelope)
 }
 rm(tar)
-
 
