@@ -1,20 +1,23 @@
 library(tidyverse)
-setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs\\D3L mouse study\\Ttn Peptides\\VLDTPG")
+setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs\\D3L mouse study\\Shared Myh Peptides\\VQLL\\Extraction")
 
 ## In case you're on your second or third peptide..
 rm(envelope, envelopes, maxima, maxtemp, compiled_maxima)
 
 ## Pep: Peptide identifier as used in source filenames
-pep <- "VLDTPG"
+pep <- "VQLL"
 ## mz: Peptide m/z value
-mz <- 650.37
+mz <- 861.98
 ## z: Peptide charge-state
-z <- 3
+z <- 2
 ## Tis: Source-tissue as used in source filenames
-tis <- "Atrial"
-## NSamp: Number of samples. As used in thus far, each individual is denoted only
-## by sample index.
-NSamp <- 22
+tis <- "LV"
+## Samps: If not all sample indices are used (as in extraction test), this should
+## be a vector containing all sample indices of interest
+Samps <- c(7, 8, 19, 20)
+## Fracs: Vector of fraction-identifiers in extraction expt.
+Fracs <- c("P", "A", "B")
+
 
 ## For-loop runs find_maxima to find all local maxima in each clipboard file.
 ## After each file's list of maxima is found, find_envelope attempts to find
@@ -25,45 +28,78 @@ NSamp <- 22
 ## length. This and 'envelopes' are the exports of note. The former mainly
 ## being useful for manual validation.
 
-for (i in c(1:NSamp)) {
-maxima <- find_maxima(pep, tis, i)
-sample <- paste(tis, i)
-maxtemp <- maxima[ , 1:2]
-colnames(maxtemp) <- paste(colnames(maxtemp), sample)
 
-envelope <- find_envelope(maxima, mz, z, rep = sample)
+## For whole-tissue D3 samples:
+# for (i in Samps) {
+# maxima <- find_maxima(pep, tis, i)
+# sample <- paste(tis, i)
+# maxtemp <- maxima[ , 1:2]
+# colnames(maxtemp) <- paste(colnames(maxtemp), sample)
+# 
+# envelope <- find_envelope(maxima, mz, z, rep = sample)
+# 
+# if (i == Samps[1]) {
+#   envelopes <- envelope
+#   compiled_maxima <- maxtemp
+# } else {
+#   envelopes <- full_join(envelope, envelopes, by = "Isotopomer")
+#     if (nrow(maxtemp) > nrow(compiled_maxima)) {
+#       compiled_maxima[(nrow(compiled_maxima)+1):nrow(maxtemp), ] <- rep(NA,
+#       times = (nrow(maxtemp) - nrow(compiled_maxima)))
+#     }
+#     if (nrow(compiled_maxima) > nrow(maxtemp)) {
+#       maxtemp[(nrow(maxtemp)+1):nrow(compiled_maxima), ] <- rep(NA,
+#       times = (nrow(compiled_maxima) - nrow(maxtemp)))
+#   }
+#   compiled_maxima <- bind_cols(maxtemp, compiled_maxima)
+# }
+# }
 
-if (i == 1) {
-  envelopes <- envelope
-  compiled_maxima <- maxtemp
-} else {
-  envelopes <- full_join(envelope, envelopes, by = "Isotopomer")
-    if (nrow(maxtemp) > nrow(compiled_maxima)) {
-      compiled_maxima[(nrow(compiled_maxima)+1):nrow(maxtemp), ] <- rep(NA,
-      times = (nrow(maxtemp) - nrow(compiled_maxima)))
+## For Extractions: 
+for (i in Samps) {
+  for (j in Fracs) {
+    maxima <- find_maxima(pep, tis, i, extraction = TRUE, fraction = j)
+    sample <- paste(tis, i, j)
+    maxtemp <- maxima[ , 1:2]
+    colnames(maxtemp) <- paste(colnames(maxtemp), sample)
+    
+    envelope <- find_envelope(maxima, mz, z, rep = sample)
+    
+    if (i == Samps[1] & j == Fracs[1]) {
+      envelopes <- envelope
+      compiled_maxima <- maxtemp
+    } else {
+      envelopes <- full_join(envelope, envelopes, by = "Isotopomer")
+      if (nrow(maxtemp) > nrow(compiled_maxima)) {
+        compiled_maxima[(nrow(compiled_maxima)+1):nrow(maxtemp), ] <- rep(NA,
+                                                                          times = (nrow(maxtemp) - nrow(compiled_maxima)))
+      }
+      if (nrow(compiled_maxima) > nrow(maxtemp)) {
+        maxtemp[(nrow(maxtemp)+1):nrow(compiled_maxima), ] <- rep(NA,
+                                                                  times = (nrow(compiled_maxima) - nrow(maxtemp)))
+      }
+      compiled_maxima <- bind_cols(maxtemp, compiled_maxima)
     }
-    if (nrow(compiled_maxima) > nrow(maxtemp)) {
-      maxtemp[(nrow(maxtemp)+1):nrow(compiled_maxima), ] <- rep(NA,
-      times = (nrow(compiled_maxima) - nrow(maxtemp)))
   }
-  compiled_maxima <- bind_cols(maxtemp, compiled_maxima)
 }
-}
+
 
 ## Exports two separate CSVs of 'envelopes' and 'compiled_maxima' respectively
 
-write.csv(envelopes, "VLDTPG all Atrial auto.csv", row.names = FALSE)
-write.csv(compiled_maxima, "VLDTPG all Atrial maxima.csv", row.names = FALSE)
+write.csv(envelopes, "VQLL LV Extraction test auto.csv", row.names = FALSE)
+write.csv(compiled_maxima, "VQLL LV Extraction test maxima.csv", row.names = FALSE)
 
 
 ## Run these first! This is the quick-and-dirty heights script (as opposed to
 ## using actual peak-areas, which would be more rigorous), so I'm hestitant
 ## to put these in the actual proteomics_functions.R script.
 
-find_maxima <- function(peptide, tissue, rep) {
-  
-  file <- paste0(peptide, " ", rep, " ", tissue, ".csv")  
-  
+find_maxima <- function(peptide, tissue, rep, extraction = FALSE, fraction = NULL) {
+  if (extraction == TRUE){
+    file <- paste0(peptide, " ", rep, " ", tissue, " ", fraction, ".csv")
+  } else {
+    file <- paste0(peptide, " ", rep, " ", tissue, ".csv")  
+  }
   mass_list <- read.csv(file) %>%
     .[8:nrow(.), ]
   colnames(mass_list) <- c("m/z", "Intensity")
