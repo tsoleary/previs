@@ -1,20 +1,20 @@
 library(tidyverse)
-setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs\\D3L mouse study\\Shared Myh Peptides\\VQLL\\Extraction")
+setwd("C:\\Users\\PrevBeast\\Documents\\R\\Previs\\D3L mouse study\\Myh6 Peptides\\DTQLQLsmall")
 
 ## In case you're on your second or third peptide..
 rm(envelope, envelopes, maxima, maxtemp, compiled_maxima)
 
 ## Pep: Peptide identifier as used in source filenames
-pep <- "VQLL"
+pep <- "DTQLQLsmall"
 ## mz: Peptide m/z value
-mz <- 861.98
+mz <- 709.61
 ## z: Peptide charge-state
-z <- 2
+z <- 4
 ## Tis: Source-tissue as used in source filenames
 tis <- "LV"
 ## Samps: If not all sample indices are used (as in extraction test), this should
 ## be a vector containing all sample indices of interest
-Samps <- c(7, 8, 19, 20)
+Samps <- c(1:22)
 ## Fracs: Vector of fraction-identifiers in extraction expt.
 Fracs <- c("P", "A", "B")
 
@@ -29,65 +29,65 @@ Fracs <- c("P", "A", "B")
 ## being useful for manual validation.
 
 
-## For whole-tissue D3 samples:
-# for (i in Samps) {
-# maxima <- find_maxima(pep, tis, i)
-# sample <- paste(tis, i)
-# maxtemp <- maxima[ , 1:2]
-# colnames(maxtemp) <- paste(colnames(maxtemp), sample)
-# 
-# envelope <- find_envelope(maxima, mz, z, rep = sample)
-# 
-# if (i == Samps[1]) {
-#   envelopes <- envelope
-#   compiled_maxima <- maxtemp
-# } else {
-#   envelopes <- full_join(envelope, envelopes, by = "Isotopomer")
-#     if (nrow(maxtemp) > nrow(compiled_maxima)) {
-#       compiled_maxima[(nrow(compiled_maxima)+1):nrow(maxtemp), ] <- rep(NA,
-#       times = (nrow(maxtemp) - nrow(compiled_maxima)))
-#     }
-#     if (nrow(compiled_maxima) > nrow(maxtemp)) {
-#       maxtemp[(nrow(maxtemp)+1):nrow(compiled_maxima), ] <- rep(NA,
-#       times = (nrow(compiled_maxima) - nrow(maxtemp)))
-#   }
-#   compiled_maxima <- bind_cols(maxtemp, compiled_maxima)
-# }
-# }
-
-## For Extractions: 
+# For whole-tissue D3 samples:
 for (i in Samps) {
-  for (j in Fracs) {
-    maxima <- find_maxima(pep, tis, i, extraction = TRUE, fraction = j)
-    sample <- paste(tis, i, j)
-    maxtemp <- maxima[ , 1:2]
-    colnames(maxtemp) <- paste(colnames(maxtemp), sample)
-    
-    envelope <- find_envelope(maxima, mz, z, rep = sample)
-    
-    if (i == Samps[1] & j == Fracs[1]) {
-      envelopes <- envelope
-      compiled_maxima <- maxtemp
-    } else {
-      envelopes <- full_join(envelope, envelopes, by = "Isotopomer")
-      if (nrow(maxtemp) > nrow(compiled_maxima)) {
-        compiled_maxima[(nrow(compiled_maxima)+1):nrow(maxtemp), ] <- rep(NA,
-                                                                          times = (nrow(maxtemp) - nrow(compiled_maxima)))
-      }
-      if (nrow(compiled_maxima) > nrow(maxtemp)) {
-        maxtemp[(nrow(maxtemp)+1):nrow(compiled_maxima), ] <- rep(NA,
-                                                                  times = (nrow(compiled_maxima) - nrow(maxtemp)))
-      }
-      compiled_maxima <- bind_cols(maxtemp, compiled_maxima)
+maxima <- find_maxima(pep, tis, i)
+sample <- paste(tis, i)
+maxtemp <- maxima[ , 1:2]
+colnames(maxtemp) <- paste(colnames(maxtemp), sample)
+
+envelope <- find_envelope(maxima, mz, z, rep = sample)
+
+if (i == Samps[1]) {
+  envelopes <- envelope
+  compiled_maxima <- maxtemp
+} else {
+  envelopes <- full_join(envelope, envelopes, by = "Isotopomer")
+    if (nrow(maxtemp) > nrow(compiled_maxima)) {
+      compiled_maxima[(nrow(compiled_maxima)+1):nrow(maxtemp), ] <- rep(NA,
+      times = (nrow(maxtemp) - nrow(compiled_maxima)))
     }
+    if (nrow(compiled_maxima) > nrow(maxtemp)) {
+      maxtemp[(nrow(maxtemp)+1):nrow(compiled_maxima), ] <- rep(NA,
+      times = (nrow(compiled_maxima) - nrow(maxtemp)))
   }
+  compiled_maxima <- bind_cols(maxtemp, compiled_maxima)
 }
+}
+
+# ## For Extractions: 
+# for (i in Samps) {
+#   for (j in Fracs) {
+#     maxima <- find_maxima(pep, tis, i, extraction = TRUE, fraction = j)
+#     sample <- paste(tis, i, j)
+#     maxtemp <- maxima[ , 1:2]
+#     colnames(maxtemp) <- paste(colnames(maxtemp), sample)
+#     
+#     envelope <- find_envelope(maxima, mz, z, rep = sample)
+#     
+#     if (i == Samps[1] & j == Fracs[1]) {
+#       envelopes <- envelope
+#       compiled_maxima <- maxtemp
+#     } else {
+#       envelopes <- full_join(envelope, envelopes, by = "Isotopomer")
+#       if (nrow(maxtemp) > nrow(compiled_maxima)) {
+#         compiled_maxima[(nrow(compiled_maxima)+1):nrow(maxtemp), ] <- rep(NA,
+#                                                                           times = (nrow(maxtemp) - nrow(compiled_maxima)))
+#       }
+#       if (nrow(compiled_maxima) > nrow(maxtemp)) {
+#         maxtemp[(nrow(maxtemp)+1):nrow(compiled_maxima), ] <- rep(NA,
+#                                                                   times = (nrow(compiled_maxima) - nrow(maxtemp)))
+#       }
+#       compiled_maxima <- bind_cols(maxtemp, compiled_maxima)
+#     }
+#   }
+# }
 
 
 ## Exports two separate CSVs of 'envelopes' and 'compiled_maxima' respectively
 
-write.csv(envelopes, "VQLL LV Extraction test auto.csv", row.names = FALSE)
-write.csv(compiled_maxima, "VQLL LV Extraction test maxima.csv", row.names = FALSE)
+write.csv(envelopes, "LDPHLV Envelopes auto.csv", row.names = FALSE)
+write.csv(compiled_maxima, "LDPHLV maxima.csv", row.names = FALSE)
 
 
 ## Run these first! This is the quick-and-dirty heights script (as opposed to
@@ -103,14 +103,33 @@ find_maxima <- function(peptide, tissue, rep, extraction = FALSE, fraction = NUL
   mass_list <- read.csv(file) %>%
     .[8:nrow(.), ]
   colnames(mass_list) <- c("m/z", "Intensity")
+# 
+#   mass_list <- read.csv("LDPHLV 01 CC.csv") %>%
+#     .[8:nrow(.), ]
+#   colnames(mass_list) <- c("m/z", "Intensity")
+  
+  # Get measurement analogous to Peak Area by multiplying all peak-heights by
+  # the number of scans over which they were averaged
+  
+  AVrow <- grep("AV", read.csv(file)[, 1])
+  scans <- as.numeric(gsub("AV: ", "", read.csv(file)[AVrow, 1]))
+  
+  # AVrow <- grep("AV", read.csv("LDPHLV 01 CC.csv")[, 1])
+  # scans <- as.numeric(gsub("AV: ", "", read.csv("LDPHLV 01 CC.csv")[AVrow, 1]))
   
   ## Decoy list to verify operations working as intended
   # mass_list2 <- mass_list
   
   ## Coerces factor-class columns to numeric (character first because of factor-
-  ## to-numeric weirdness.)
+  ## to-numeric weirdness.) THEN gets measurement analogous to Peak Area by
+  ## multiplying all peak-heights by the number of scans over which they were averaged
+  
   mass_list$`m/z` <- as.numeric(as.character(mass_list$`m/z`))
   mass_list$Intensity <- as.numeric(as.character(mass_list$Intensity))
+  mass_list <- mutate(mass_list, "scaled" = mass_list$Intensity * scans) %>%
+    select(., c(1, 3))
+  colnames(mass_list) <- c("m/z", "Intensity")
+  
   ##  Diffdiffsign operation is key for finding maxima here. Theoretically does not
   ##  need to be a column. Might change later.
   mass_list$diffdiffsign <- c(0, diff(sign(diff(mass_list$Intensity))), 0)
@@ -171,3 +190,45 @@ find_envelope <- function(data, mass, charge, rep, deltamax = 0.02, NAcounter = 
 }
 rm(tar)
 
+## Variation of find_maxima to get a vector of scan-numbers for each sample
+
+find_AV <- function(peptide, tissue, rep, extraction = FALSE, fraction = NULL) {
+  if (extraction == TRUE){
+    file <- paste0(peptide, " ", rep, " ", tissue, " ", fraction, ".csv")
+  } else {
+    file <- paste0(peptide, " ", rep, " ", tissue, ".csv")  
+  }
+
+  AVrow <- grep("AV", read.csv(file)[, 1])
+  scans <- as.numeric(gsub("AV: ", "", read.csv(file)[AVrow, 1]))
+
+  return(scans)
+}
+
+## Let's do this
+
+for (i in Samps) {
+  AV <- find_AV(pep, tis, i)
+  sample <- paste(tis, i)
+  AVtemp <- AV
+  
+  if (i == Samps[1]) {
+    compiled_AV <- AVtemp
+    scanlist <- sample
+   } else {
+  #   envelopes <- full_join(envelope, envelopes, by = "Isotopomer")
+  #   if (nrow(AVtemp) > nrow(compiled_maxima)) {
+  #     compiled_maxima[(nrow(compiled_maxima)+1):nrow(AVtemp), ] <- rep(NA,
+  #                                                                       times = (nrow(AVtemp) - nrow(compiled_maxima)))
+  #   }
+  #   if (nrow(compiled_maxima) > nrow(AVtemp)) {
+  #     AVtemp[(nrow(AVtemp)+1):nrow(compiled_maxima), ] <- rep(NA,
+  #                                                               times = (nrow(compiled_maxima) - nrow(AVtemp)))
+  #   }
+    scanlist <- c(scanlist, sample) 
+    compiled_AV <- bind_cols(AVtemp, compiled_AV)
+    names(compiled_AV) <- scanlist[length(scanlist):1]
+  }
+}
+
+write.csv(compiled_AV, "AV List.csv")
