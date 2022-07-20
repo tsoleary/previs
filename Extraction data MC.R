@@ -3,9 +3,9 @@
 library(tidyverse)
 source("C:/Users/PrevBeast/Documents/GitHub/Previs/proteomics_functions.R")
 
-setwd("C:/Users/PrevBeast/Documents/R/Previs")
+setwd("C:/Users/PrevBeast/Documents/R/Caporizzo")
 data_raw <- 
-  read.csv("Timed Extraction WT 1 select peptides.csv")
+  read.csv("Extraction colch Redo March All peptides.csv")
 
 # Normalization ----------------------------------------------------------------
 
@@ -30,6 +30,7 @@ GAPDH <- "P04797"
 
 
 # norm_pro <- titin
+# norm_pro <- GAPDH
 norm_pro <- BSA
 
 norm_pep <- subset(data, data$Master.Protein.Accessions == norm_pro)
@@ -75,7 +76,7 @@ protein <- by_protein(data, group_names) %>%
   rownames_to_column("Master.Protein.Accessions")
 
 # Converting protein accession to gene symbol ----------------------------------
-gene_df <- read.csv('Extraction WT 150 200 250 Allreps Gene List.csv')
+gene_df <- read.csv('Extraction colch Redo March genelist.csv')
 
 data$gene <- mpa_to_gene(data, gene_df)
 protein$gene <- mpa_to_gene(protein, gene_df)
@@ -90,7 +91,7 @@ protein <- filter(protein, protein$peptides >= min_pep)
 # Gather separate file abundances to single column, and separate filename into
 # several variables
 pbyfile <- gather(protein, contains("F"), key = "file", value = "abundance")
-septest <- separate(pbyfile, file, into = c("file", "frac","conc","salt","type", "time"))
+septest <- separate(pbyfile, file, into = c("file", "frac","treatment","mass"))
 
 # Assign replicate-number by PD file-identifier
 indlist <- read.csv("Timed Extraction WT 1 ID.csv")
@@ -117,10 +118,10 @@ septest$abundance[is.na(septest$abundance)] = 0
 # Timed single extraction
 
 P <- filter(septest, frac == "P") %>%
-  select(., c(1:3, 6, 10, 9)) %>%
+  select(., c(1:3, 6:8)) %>%
   rename(., P = abundance)
 S <- filter(septest, frac == "S") %>%
-  select(., c(1:3, 6, 10, 9)) %>%
+  select(., c(1:3, 6:8)) %>%
   rename(., S = abundance)
 
 jointest <- full_join(P, S)
@@ -130,7 +131,7 @@ jointest <- full_join(P, S)
 # jointest <- mutate(jointest, insoluble = P/total)
 # jointest <- mutate(jointest, soluble = (A+B)/total)
 
-# For timed single extraction
+# For single extraction
 jointest <- mutate(jointest, total = S+P)
 jointest <- mutate(jointest, insoluble = P/total)
 jointest <- mutate(jointest, soluble = (S)/total)
@@ -138,15 +139,9 @@ jointest <- mutate(jointest, soluble = (S)/total)
 # Export values in current state (no averaging)
 write.csv(jointest, "extraction individual reps test.csv")
 
-# Compute summary stats within conc. and gene
+# Compute summary stats within treatment and accession
 
-solsummary <- group_by(jointest, conc, gene) %>%
-  summarise(., solavg = mean(soluble, na.rm = TRUE), solsd = sd(soluble, na.rm = TRUE),
-            peptides = mean(peptides)) %>%
-  ungroup(.)
-
-# Timed single extraction stats
-solsummary <- group_by(jointest, time, gene) %>%
+solsummary <- group_by(jointest, treatment, Master.Protein.Accessions) %>%
   summarise(., solavg = mean(soluble, na.rm = TRUE), solsd = sd(soluble, na.rm = TRUE),
             peptides = mean(peptides)) %>%
   ungroup(.)
@@ -176,31 +171,26 @@ solsummary <- group_by(jointest, time, gene) %>%
 #   full_join(., High) %>%
 #   mutate(., "200/150" = avg200/avg150, "250/150" = avg250/avg150)
 
-# Spread 'time' variable into multiple mean columns
+# Spread 'treatment' variable into multiple mean columns
 
-t5 <- filter(solsummary, time == '5min') %>%
-  select(-time) %>%
-  rename(., avg5 = solavg, sd5 = solsd)
-t10 <- filter(solsummary, time == '10min') %>%
-  select(-time) %>%
-  rename(., avg10 = solavg, sd10 = solsd)
-t20 <- filter(solsummary, time == '20min') %>%
-  select(-time) %>%
-  rename(., avg20 = solavg, sd20 = solsd)
-t30 <- filter(solsummary, time == '30min') %>%
-  select(-time) %>%
-  rename(., avg30 = solavg, sd30 = solsd)
+colch <- filter(solsummary, treatment == 'Colch') %>%
+  select(-treatment) %>%
+  rename(., avgColch = solavg, sdColch = solsd)
+control <- filter(solsummary, treatment == 'Control') %>%
+  select(-treatment) %>%
+  rename(., avgControl = solavg, sdControl = solsd)
 
-timesum <- full_join(t5, t10) %>%
-  full_join(., t20) %>%
-  full_join(., t30)
+treatsum <- full_join(colch, control) %>%
+mutate(., controlratio = avgColch/avgControl)
+
+treatsum$gene <- mpa_to_gene(treatsum, gene_df)
 
 
 # Export -----------------------------------------------------------------------
 
-write.csv(protein, "Proteins Extraction top3.csv")
+write.csv(protein, "Proteins March Extraction top3.csv")
 # write.csv(specialprotein, "H4 norm protein watchlist by Top3.csv")
-write.csv(data, "Peptides Extraction top3.csv")
+write.csv(data, "Peptides March Extraction top3.csv")
 # write.csv(specialpeptide, "H4 Norm watchlist peptides Top5.csv")
-write.csv(Concsum, "Full extraction summary 150 200 250 WT with peptide counts.csv")
+write.csv(treatsum, "Colch Extraction summary.csv")
 

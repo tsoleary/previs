@@ -3,30 +3,12 @@
 library(tidyverse)
 source("C:/Users/PrevBeast/Documents/GitHub/Previs/proteomics_functions.R")
 
-setwd("C:/Users/PrevBeast/Documents/R/Elemans")
-data_raw <- 
-  read.csv("All Batches All peptides.csv")
+setwd("C:/Users/PrevBeast/Documents/R/Beach/Bulk Abundances")
+data_raw <- read.csv("D3 Cells mouse DB All Peptides.csv")
 
 # Normalization ----------------------------------------------------------------
 
-males <- grep("_M_", colnames(data_raw))
-females <- grep("_F_", colnames(data_raw))
-
-muscvs <- grep("_VS_", colnames(data_raw))
-muscdtb <- grep("_DTB_", colnames(data_raw))
-
-sider <- grep("_R_", colnames(data_raw))
-sidel <- grep("_L_", colnames(data_raw))
-
-treatnc <- grep("_NC", colnames(data_raw))
-treatsp <- grep("_SP", colnames(data_raw))
-
-focus <- intersect(males, muscvs) %>%
-  intersect(., treatnc)
-
-data_raw <- data_raw[, c(1:3, focus)]
-
-ctrl_raw <- grep("F", colnames(data_raw))
+ctrl_raw <- grep("0Hr", colnames(data_raw))
 
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
@@ -36,17 +18,15 @@ data_raw <- filter(data_raw, (is.na(ctrl_raw_med) == FALSE))
 max_pep <- 3
 
 data <-
-  as_tibble(data_raw) %>%
+  tbl_df(data_raw) %>%
   group_by(Master.Protein.Accessions) %>%
   top_n(n = max_pep, wt = ctrl_raw_med)
 
 
 # proteins used for normalization
-h4 <- "B5FXC8"
+GAPDH <- "A0A0A0MQF6"
 
-
-# norm_pro <- titin
-norm_pro <- h4
+norm_pro <- GAPDH
 
 norm_pep <- subset(data, data$Master.Protein.Accessions == norm_pro)
 numeric_cols <- which(sapply(norm_pep, is.numeric) == TRUE)
@@ -73,6 +53,24 @@ data <- cbind(data, norm_test)
 # data <- as_tibble(data)
 # data <- cbind(data, norm_test)
 
+# # TA muscle mass (mg) and sum-total (one operation)
+# 
+# sample_id_mass <- read.csv("PSD proteomic sample info M w1_8.csv")
+# ta_mass <- sample_id_mass$TA.mass
+# names(ta_mass) <- sample_id_mass$ID
+# 
+# 
+# norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
+# 
+# raw_abun_mat <- as.matrix(data[, ctrl_raw])
+# 
+# 
+# norm_abun <- t(t(raw_abun_mat)*ta_mass/norm_value)
+# colnames(norm_abun) <- paste(colnames(norm_abun), sep = "_", "norm")
+# norm_test <- as.data.frame(norm_abun)
+# data <- as_tibble(data)
+# data <- cbind(data, norm_test)
+
 # Data frame with only top few ionizing peptides -------------------------------
 
 # pep_top <- 3
@@ -91,50 +89,15 @@ protein <- by_protein(data, group_names) %>%
   rownames_to_column("Master.Protein.Accessions")
 
 # Converting protein accession to gene symbol ----------------------------------
-gene_df <- read.csv('All Batches Gene list.csv')
+gene_df <- read.csv('D3 Cells mouse DB genelist.csv')
 
 data$gene <- mpa_to_gene(data, gene_df)
 protein$gene <- mpa_to_gene(protein, gene_df)
 
 # Minimum number of peptides for each protein group ----------------------------
-min_pep <- 1
+min_pep <- 2 
 protein$peptides <- table(data_raw$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-# Sort by gene before export
-
-data <- arrange(data, gene)
-protein <- arrange(protein, gene)
-
-
-# watchlist <- read.csv("Uniprot and NCBI Identifiers Tgut Myosins and MYBP.csv")
-# for (i in watchlist$Identifier) {
-#   if (i == "") {
-#     next
-#   }
-#   if (i == watchlist$Identifier[1]) {
-#   specialprotein <- slice(protein, grep(i, protein$Master.Protein.Accessions)) 
-#   } else {
-#   specialprotein <- union(specialprotein, slice(protein, grep(i, protein$Master.Protein.Accessions))) 
-#   }
-#   
-# }
-# 
-# 
-# for (i in watchlist$Identifier) {
-#   if (i == "") {
-#     next
-#   }
-#   if (i == watchlist$Identifier[1]) {
-#     specialpeptide <- slice(data, grep(i, data$Master.Protein.Accessions))
-#   } else {
-#     specialpeptide <- union(specialpeptide, slice(data, grep(i, data$Master.Protein.Accessions)))
-#   }
-#   print(i)
-# }
-
-write.csv(protein, "Allrounds H4 norm proteins by Top3.csv")
-# write.csv(specialprotein, "H4 norm protein watchlist by Top3.csv")
-write.csv(data, "Allrounds H4 Norm all peptides.csv")
-# write.csv(specialpeptide, "H4 Norm watchlist peptides Top5.csv")
-
+write.csv(protein, "Top 3 GAPDH Norm.csv")
+write.csv(data, "Top 3 GAPDH Norm Peptides.csv")

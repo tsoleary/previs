@@ -3,30 +3,14 @@
 library(tidyverse)
 source("C:/Users/PrevBeast/Documents/GitHub/Previs/proteomics_functions.R")
 
-setwd("C:/Users/PrevBeast/Documents/R/Elemans")
+setwd("C:/Users/PrevBeast/Documents/R/Yengo/Rat PTMs")
 data_raw <- 
-  read.csv("All Batches All peptides.csv")
+  read.csv("Myo and Tissue test all peptides.csv")
 
 # Normalization ----------------------------------------------------------------
 
-males <- grep("_M_", colnames(data_raw))
-females <- grep("_F_", colnames(data_raw))
-
-muscvs <- grep("_VS_", colnames(data_raw))
-muscdtb <- grep("_DTB_", colnames(data_raw))
-
-sider <- grep("_R_", colnames(data_raw))
-sidel <- grep("_L_", colnames(data_raw))
-
-treatnc <- grep("_NC", colnames(data_raw))
-treatsp <- grep("_SP", colnames(data_raw))
-
-focus <- intersect(males, muscvs) %>%
-  intersect(., treatnc)
-
-data_raw <- data_raw[, c(1:3, focus)]
-
-ctrl_raw <- grep("F", colnames(data_raw))
+ctrl_raw <- grep("Tissue", colnames(data_raw))
+samps <- grep("F", colnames(data_raw))
 
 data_raw$ctrl_raw_med <- by_group(data_raw, ctrl_raw)
 
@@ -36,17 +20,17 @@ data_raw <- filter(data_raw, (is.na(ctrl_raw_med) == FALSE))
 max_pep <- 3
 
 data <-
-  as_tibble(data_raw) %>%
+  tbl_df(data_raw) %>%
   group_by(Master.Protein.Accessions) %>%
   top_n(n = max_pep, wt = ctrl_raw_med)
 
 
 # proteins used for normalization
-h4 <- "B5FXC8"
+histone <- "P62804"
 
 
-# norm_pro <- titin
-norm_pro <- h4
+norm_pro <- histone
+
 
 norm_pep <- subset(data, data$Master.Protein.Accessions == norm_pro)
 numeric_cols <- which(sapply(norm_pep, is.numeric) == TRUE)
@@ -61,11 +45,10 @@ norm_test <- as.data.frame(norm_abun)
 data <- as_tibble(data)
 data <- cbind(data, norm_test)
 
-
 # # sum of every column
-# norm_value <- colSums(data_raw[, ctrl_raw], na.rm = TRUE)
+# norm_value <- colSums(data_raw[, samps], na.rm = TRUE)
 # 
-# raw_abun_mat <- as.matrix(data[, ctrl_raw])
+# raw_abun_mat <- as.matrix(data[, samps])
 # 
 # norm_abun <- t(t(raw_abun_mat)/norm_value)
 # colnames(norm_abun) <- paste(colnames(norm_abun), sep = "_", "norm")
@@ -91,50 +74,16 @@ protein <- by_protein(data, group_names) %>%
   rownames_to_column("Master.Protein.Accessions")
 
 # Converting protein accession to gene symbol ----------------------------------
-gene_df <- read.csv('All Batches Gene list.csv')
+gene_df <- read.csv('Myo and Tissue test gene list.csv')
 
 data$gene <- mpa_to_gene(data, gene_df)
 protein$gene <- mpa_to_gene(protein, gene_df)
 
 # Minimum number of peptides for each protein group ----------------------------
-min_pep <- 1
+min_pep <- 1 
 protein$peptides <- table(data_raw$Master.Protein.Accessions)
 protein <- filter(protein, protein$peptides >= min_pep)
 
-# Sort by gene before export
-
-data <- arrange(data, gene)
-protein <- arrange(protein, gene)
-
-
-# watchlist <- read.csv("Uniprot and NCBI Identifiers Tgut Myosins and MYBP.csv")
-# for (i in watchlist$Identifier) {
-#   if (i == "") {
-#     next
-#   }
-#   if (i == watchlist$Identifier[1]) {
-#   specialprotein <- slice(protein, grep(i, protein$Master.Protein.Accessions)) 
-#   } else {
-#   specialprotein <- union(specialprotein, slice(protein, grep(i, protein$Master.Protein.Accessions))) 
-#   }
-#   
-# }
-# 
-# 
-# for (i in watchlist$Identifier) {
-#   if (i == "") {
-#     next
-#   }
-#   if (i == watchlist$Identifier[1]) {
-#     specialpeptide <- slice(data, grep(i, data$Master.Protein.Accessions))
-#   } else {
-#     specialpeptide <- union(specialpeptide, slice(data, grep(i, data$Master.Protein.Accessions)))
-#   }
-#   print(i)
-# }
-
-write.csv(protein, "Allrounds H4 norm proteins by Top3.csv")
-# write.csv(specialprotein, "H4 norm protein watchlist by Top3.csv")
-write.csv(data, "Allrounds H4 Norm all peptides.csv")
-# write.csv(specialpeptide, "H4 Norm watchlist peptides Top5.csv")
-
+write.csv(protein, "Rat Top3 Histone norm proteins.csv")
+write.csv(data, "Rat Top3 Histone norm peptides.csv")
+write.csv(norm_value, "sums.csv")

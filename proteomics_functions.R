@@ -38,6 +38,20 @@ by_protein <- function (dat, groups, FUN = mean){
   return(tab)
 }
 
+# Same as by_protein, but group by a chosen variable
+by_variable <- function (dat, groups, FUN = mean, VAR = "region"){
+  tab <- NULL
+  for (col in groups){
+    temp <- tapply(dat[, col],
+                   dat[, VAR],
+                   FUN,
+                   na.rm = TRUE)
+    tab <- cbind(tab, temp)
+  }
+  colnames(tab) <- groups
+  return(tab)
+}
+
 # standard deviation of grouped relative abundance using top ionizers
 square_x_df <- function (dat, group_sd, group_df){
   (dat[, group_sd])^2 * (dat[, group_df])
@@ -80,6 +94,30 @@ mpa_to_gene <- function (dat, gene_dat){
   }
   return(dat$gene)
 }
+
+# Convert annotated peptide sequence to Master.Protein.Accession
+# (Backwards through raw data frame)
+# NOT NEEDED - NOT FULLY FUNCTIONAL
+
+# seq_to_mpa <- function (dat, mpa_dat){
+#   dat$Master.Protein.Accessions <- dat$Annotated.Sequence
+#   for (i in 1:nrow(dat)){
+#     temp <- which(dat$Master.Protein.Accessions[i] == mpa_dat$Annotated.Sequence, TRUE)
+#     if (length(temp) == 1){
+#       dat$Master.Protein.Accessions <- gsub(dat$Master.Protein.Accessions[i],
+#                                             mpa_dat$Master.Protein.Accessions[temp], dat$Master.Protein.Accessions)
+#     }
+#     if (length(temp) > 1 & length(unique(mpa_dat$Master.Protein.Accessions[temp])) == 1) {
+#       dat$Master.Protein.Accessions <- gsub(dat$Master.Protein.Accessions[i],
+#                                             mpa_dat$Master.Protein.Accessions[temp[1]], dat$Master.Protein.Accessions)
+#     }
+#     if (length(unique(mpa_dat$Master.Protein.Accessions[temp])) > 1) {
+#       print("welp")
+#       next
+#     }
+#   }
+#   return(dat$Master.Protein.Accessions)
+# }
 
 # Convert PD file identifier to individual identifier
 file_to_ind <- function (dat, sample_dat){
@@ -129,6 +167,114 @@ rm_outliers <- function (dat, pro_df, ratio, mult = 2){
   }
   return(data_rm_out)
 }
+
+# remove outliers in peptide data (for "region")
+rm_outliers_reg <- function (dat, pro_df, ratio, mult = 2){
+  
+  sd_ratio_temp_df <- by_variable(dat, ratio, FUN = sd, VAR = "region") %>%
+    as.data.frame %>%
+    rownames_to_column("region") %>%
+    'colnames<-' (c("region", "sd_ratio"))
+  
+  pro_temp <- dplyr::full_join(pro_df, sd_ratio_temp_df,
+                               by = "region")
+  
+  pro_temp$max_ratio <- pro_temp[, ratio] + mult * pro_temp$sd_ratio
+  pro_temp$min_ratio <- pro_temp[, ratio] - mult * pro_temp$sd_ratio
+  
+  data_rm_out <- NULL
+  
+  for (pro in unique(dat$region)){
+    temp <- dplyr::filter(dat, dat$region == pro)
+    
+    rm_high <- which(temp[, ratio] > pro_temp$max_ratio[which(
+      pro_temp$region == pro)])
+    
+    rm_low <- which(temp[, ratio] < pro_temp$min_ratio[which(
+      pro_temp$region == pro)])
+    
+    rm <- c(rm_high, rm_low)
+    if (length(rm) > 0){
+      temp_rm <- temp[-rm, ]
+      data_rm_out <- dplyr::bind_rows(data_rm_out, temp_rm)
+    } else {
+      data_rm_out <- dplyr::bind_rows(data_rm_out, temp)
+    }
+  }
+  return(data_rm_out)
+}
+
+# remove outliers in peptide data (for "domain")
+rm_outliers_dom <- function (dat, pro_df, ratio, mult = 2){
+  
+  sd_ratio_temp_df <- by_variable(dat, ratio, FUN = sd, VAR = "domain") %>%
+    as.data.frame %>%
+    rownames_to_column("domain") %>%
+    'colnames<-' (c("domain", "sd_ratio"))
+  
+  pro_temp <- dplyr::full_join(pro_df, sd_ratio_temp_df,
+                               by = "domain")
+  
+  pro_temp$max_ratio <- pro_temp[, ratio] + mult * pro_temp$sd_ratio
+  pro_temp$min_ratio <- pro_temp[, ratio] - mult * pro_temp$sd_ratio
+  
+  data_rm_out <- NULL
+  
+  for (pro in unique(dat$domain)){
+    temp <- dplyr::filter(dat, dat$domain == pro)
+    
+    rm_high <- which(temp[, ratio] > pro_temp$max_ratio[which(
+      pro_temp$domain == pro)])
+    
+    rm_low <- which(temp[, ratio] < pro_temp$min_ratio[which(
+      pro_temp$domain == pro)])
+    
+    rm <- c(rm_high, rm_low)
+    if (length(rm) > 0){
+      temp_rm <- temp[-rm, ]
+      data_rm_out <- dplyr::bind_rows(data_rm_out, temp_rm)
+    } else {
+      data_rm_out <- dplyr::bind_rows(data_rm_out, temp)
+    }
+  }
+  return(data_rm_out)
+}
+
+# # remove outliers in peptide data (by_variable instead of by_protein)
+# rm_outliers_var <- function (dat, pro_df, ratio, mult = 2, VAR = "region"){
+#   
+#   sd_ratio_temp_df <- by_variable(dat, ratio, FUN = sd, VAR) %>%
+#     as.data.frame %>%
+#     rownames_to_column(VAR) %>%
+#     'colnames<-' (c(VAR, "sd_ratios"))
+#   
+#   pro_temp <- dplyr::full_join(pro_df, sd_ratio_temp_df,
+#                                by = VAR)
+#   
+#   pro_temp$max_ratio <- pro_temp$ratio + mult * pro_temp$sd_ratio
+#   pro_temp$min_ratio <- pro_temp$ratio - mult * pro_temp$sd_ratio
+#   
+#   data_rm_out <- NULL
+#   
+#   for (pro in unique(dat[, VAR])){
+#     temp <- dplyr::filter(dat, dat[, VAR] == pro)
+#     
+#     rm_high <- which(temp[, ratio] > pro_temp$max_ratio[which(
+#       pro_temp[, VAR] == pro)])
+#     
+#     rm_low <- which(temp[, ratio] < pro_temp$min_ratio[which(
+#       pro_temp[, VAR] == pro)])
+#     
+#     rm <- c(rm_high, rm_low)
+#     if (length(rm) > 0){
+#       temp_rm <- temp[-rm, ]
+#       data_rm_out <- dplyr::bind_rows(data_rm_out, temp_rm)
+#     } else {
+#       data_rm_out <- dplyr::bind_rows(data_rm_out, temp)
+#     }
+#   }
+#   return(data_rm_out)
+# }
 
 # Abundance ratio function
 abun_ratio <- function (dat, group, ctrl = "ctrl_med"){
@@ -842,17 +988,17 @@ iso_ratio_calc_one <- function(dat){
   
 }
 
-# # Ratio of each peptide's all-isotope summed abundance to that of
-# # a selected peptide
-# 
+# Ratio of each peptide's all-isotope summed abundance to that of
+# a selected peptide
+
 # iso_sum_ratio <- function(dat, divisor) {
-#   
+# 
 #   ratios <- NULL
-#   
+# 
 #   for (i in 1:nrow(dat)){
 #     divisorsum <- mean(dat$Sum[which(dat$protein == divisor &
-#                                 dat$sex == dat$sex[i] & 
-#                                 dat$leg == dat$leg[i] & 
+#                                 dat$sex == dat$sex[i] &
+#                                 dat$leg == dat$leg[i] &
 #                                 dat$week == dat$week[i])])
 #     ratios <- c(ratios, dat$Sum[i]/divisorsum)
 #   }

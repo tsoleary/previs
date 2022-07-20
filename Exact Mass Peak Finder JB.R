@@ -1,23 +1,25 @@
 library(tidyverse)
-setwd("C:/Users/PrevBeast/Documents/R/Previs/D3L mouse study/Hist1h2ab Peptides/VTIAQG")
+setwd("C:/Users/PrevBeast/Documents/R/Beach/Myh10 peptides/HATALE/Y27 Expt")
 
 ## In case you're on your second or third peptide..
 rm(envelope, envelopes, maxima, maxtemp, compiled_maxima)
 
 ## Pep: Peptide identifier as used in source filenames
-pep <- "VTIAQG"
+pep <- "HATALE"
 ## mz: Peptide m/z value
-mz <- 644.40
+mz <- 599.65
 ## z: Peptide charge-state
 z <- 3
 ## Tis: Source-tissue as used in source filenames
-tis <- "LVWT"
+tis <- "Y27"
 ## Samps: If not all sample indices are used (as in extraction test), this should
 ## be a vector containing all sample indices of interest
-Samps <- c(1:22)
-# Samps <- c(1, 16, 17, 2, 3, 18, 4, 5, 19, 6, 7, 20, 8, 9, 10, 11, 12, 21, 13, 14, 15, 22)
+Samps <- c("01", "02", "121", "122", "241", "242", "481", "482", "721", "722",
+           "961", "962", "1201", "1202", "1441", "1442", "1681", "1682")
+Samps <- c("121", "122", "241", "242", "481", "482", "721", "722",
+           "961", "962", "1201", "1202", "1441", "1442", "1681", "1682")
 ## Fracs: Vector of fraction-identifiers in extraction expt.
-# Fracs <- c("P", "S")
+Fracs <- c("P", "A", "B")
 
 
 ## For-loop runs find_maxima to find all local maxima in each clipboard file.
@@ -30,7 +32,7 @@ Samps <- c(1:22)
 ## being useful for manual validation.
 
 
-## For whole-tissue D3 samples:
+# For whole-tissue D3 samples:
 for (i in Samps) {
 maxima <- find_maxima(pep, tis, i)
 sample <- paste(tis, i)
@@ -56,16 +58,16 @@ if (i == Samps[1]) {
 }
 }
 
-# # For Extractions:
+# ## For Extractions: 
 # for (i in Samps) {
 #   for (j in Fracs) {
 #     maxima <- find_maxima(pep, tis, i, extraction = TRUE, fraction = j)
 #     sample <- paste(tis, i, j)
 #     maxtemp <- maxima[ , 1:2]
 #     colnames(maxtemp) <- paste(colnames(maxtemp), sample)
-# 
+#     
 #     envelope <- find_envelope(maxima, mz, z, rep = sample)
-# 
+#     
 #     if (i == Samps[1] & j == Fracs[1]) {
 #       envelopes <- envelope
 #       compiled_maxima <- maxtemp
@@ -87,8 +89,8 @@ if (i == Samps[1]) {
 
 ## Exports two separate CSVs of 'envelopes' and 'compiled_maxima' respectively
 
-write.csv(envelopes, "VTIAQG all WT LV auto.csv", row.names = FALSE)
-write.csv(compiled_maxima, "VTIAQG all WT LV maxima.csv", row.names = FALSE)
+write.csv(envelopes, "HATALE Envelopes Y27 auto.csv", row.names = FALSE)
+write.csv(compiled_maxima, "HATALE maxima Y27.csv", row.names = FALSE)
 
 
 ## Run these first! This is the quick-and-dirty heights script (as opposed to
